@@ -1,26 +1,136 @@
 @import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
+/* Custom color variables */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-light: #f9fafb;
+  --bg-dark: #1f2937;
+  --text-light: #111827;
+  --text-dark: #e5e7eb;
+  --gray-850: #1e293b; /* Custom dark shade for login box */
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Base styles */
+html {
+  background-color: var(--bg-light) !important;
+  color: var(--text-light) !important;
+  transition: background-color 700ms ease-in-out, color 700ms ease-in-out;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+html.dark {
+  background-color: var(--bg-dark) !important;
+  color: var(--text-dark) !important;
+}
+
+html:not(.dark) * {
+  color: var(--text-light) !important;
+}
+
+html.dark * {
+  color: var(--text-dark) !important;
+}
+
+/* Fallback for Tailwind dark classes */
+html.dark [class*="bg-gradient-to-br"] {
+  background-image: linear-gradient(to bottom right, #111827, #1e3a8a) !important;
+}
+
+html.dark [class*="bg-white"] {
+  background-color: var(--gray-850) !important;
+}
+
+html.dark [class*="text-gray-800"], html.dark [class*="text-gray-900"] {
+  color: var(--text-dark) !important;
+}
+
+/* Ensure body uses Geist font */
+body {
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom component styles */
+@layer components {
+  .btn-primary {
+    @apply bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-2 px-4 rounded-lg shadow-lg hover:shadow-[0_0_15px_rgba(99,102,241,0.5)] hover:from-indigo-700 hover:to-purple-700 transition-all duration-300;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Smooth transitions for dark mode */
+* {
+  transition-property: background-color, border-color, color, fill, stroke, transform, box-shadow;
+  transition-duration: 300ms;
+  transition-timing-function: ease-in-out;
+}
+
+/* Hide Vercel/Next.js branding */
+a[href*="vercel.com"],
+img[src*="vercel.svg"],
+[class*="vercel"],
+[id*="vercel"],
+[class*="powered-by-vercel"],
+[class*="next-js"] {
+  display: none !important;
+}
+@layer base {
+  :root {
+    --gradient-start: #a5b4fc;
+    --gradient-mid: #e9d5ff;
+    --gradient-end: #fbcfe8;
+    --dark-gradient-start: #312e81;
+    --dark-gradient-mid: #1f2937;
+    --dark-gradient-end: #1e40af;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply text-gray-900 dark:text-gray-100;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sans font-bold;
+  }
+
+  p, label, input, select, textarea {
+    @apply font-sans;
+  }
+
+  code, pre {
+    @apply font-mono;
+  }
+}
+
+@layer utilities {
+  .glassmorphism {
+    @apply bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border border-gray-200/30 dark:border-indigo-500/30 shadow-lg dark:shadow-[0_4px_20px_rgba(99,102,241,0.2)];
+  }
+
+  .gradient-border {
+    @apply border-2 border-transparent bg-clip-padding bg-gradient-to-r from-indigo-200/50 to-purple-200/50 dark:from-indigo-500/50 dark:to-purple-500/50;
+  }
+
+  .input-focus {
+    @apply focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent outline-none;
+  }
+}
+
+/* Keyframes for button gradient animation */
+@keyframes gradient-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gradient-button {
+  @apply bg-gradient-to-r from-indigo-600 to-purple-600 bg-[length:200%_100%] animate-[gradient-flow_3s_ease_infinite];
 }
