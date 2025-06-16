@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -137,8 +136,8 @@ export default function DashboardPage({ emailFromUrl }: DashboardPageProps) {
       {
         label: 'การจองตามช่วงเวลา',
         data: Object.values(timeSlotCounts),
-        backgroundColor: 'rgba(99, 102, 241, 0.6)',
-        borderColor: 'rgba(99, 102, 241, 1)',
+        backgroundColor: isDark ? 'rgba(99, 102, 241, 0.6)' : 'rgba(59, 130, 246, 0.6)',
+        borderColor: isDark ? 'rgba(99, 102, 241, 1)' : 'rgba(59, 130, 246, 1)',
         borderWidth: 1,
       },
     ],
@@ -156,8 +155,8 @@ export default function DashboardPage({ emailFromUrl }: DashboardPageProps) {
       {
         label: 'การจองตามวัน',
         data: Object.values(dailyBookings),
-        backgroundColor: ['rgba(239, 68, 68, 0.6)'],
-        borderColor: ['rgba(239, 68, 68, 1)'],
+        backgroundColor: isDark ? ['rgba(239, 68, 68, 0.6)'] : ['rgba(236, 72, 153, 0.6)'],
+        borderColor: isDark ? ['rgba(239, 68, 68, 1)'] : ['rgba(236, 72, 153, 1)'],
         borderWidth: 1,
       },
     ],
@@ -324,12 +323,12 @@ export default function DashboardPage({ emailFromUrl }: DashboardPageProps) {
       </motion.nav>
 
       {/* เนื้อหาหลัก */}
-      <div className="flex-grow flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-20 pb-10">
+      <div className="flex-grow flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-20 pb-10 transition-colors duration-700">
         <motion.div
           initial={{ opacity: 0, y: 50, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="w-full max-w-4xl p-8 sm:p-10 rounded-3xl bg-white dark:bg-gray-900/80 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500"
+          className="w-full max-w-4xl p-8 sm:p-10 rounded-3xl bg-white/90 dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500"
         >
           <h2 className="text-4xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400 mb-8 tracking-tight">
             แดชบอร์ดสถิติการจอง
@@ -362,7 +361,7 @@ export default function DashboardPage({ emailFromUrl }: DashboardPageProps) {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="p-6 rounded-lg bg-white dark:bg-gray-900/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
+                  className="p-6 rounded-lg bg-white/90 dark:bg-gray-700/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
                 >
                   <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100">จำนวนการจองทั้งหมด</h3>
                   <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{totalBookings}</p>
@@ -371,7 +370,7 @@ export default function DashboardPage({ emailFromUrl }: DashboardPageProps) {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="p-6 rounded-lg bg-white dark:bg-gray-900/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
+                  className="p-6 rounded-lg bg-white/90 dark:bg-gray-700/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
                 >
                   <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100">จำนวนผู้ใช้ที่ไม่ซ้ำ</h3>
                   <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{uniqueEmails}</p>
@@ -384,7 +383,7 @@ export default function DashboardPage({ emailFromUrl }: DashboardPageProps) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="p-6 rounded-lg bg-white dark:bg-gray-900/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
+                  className="p-6 rounded-lg bg-white/90 dark:bg-gray-700/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
                 >
                   <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100 mb-4">การจองตามช่วงเวลา</h3>
                   <Bar
@@ -406,7 +405,7 @@ export default function DashboardPage({ emailFromUrl }: DashboardPageProps) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="p-6 rounded-lg bg-white dark:bg-gray-900/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
+                  className="p-6 rounded-lg bg-white/90 dark:bg-gray-700/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
                 >
                   <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100 mb-4">การจองตามวัน</h3>
                   <Pie
@@ -429,14 +428,14 @@ export default function DashboardPage({ emailFromUrl }: DashboardPageProps) {
       {/* องค์ประกอบตกแต่งพื้นหลัง */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <motion.div
-          className="absolute -top-20 -left-50 w-80 h-80 bg-red-200/20 dark:bg-red-900/20 rounded-lg mix-blend-multiply filter blur-xl"
+          className="absolute -top-20 -left-20 w-64 h-64 bg-indigo-200/20 dark:bg-indigo-600/20 rounded-full mix-blend-multiply filter blur-3xl"
           animate={{ scale: [1, 1.2, 1], x: [0, 15, 0], y: [0, 20, 0] }}
-          transition={{ duration: 7, repeat: 2, repeatType: 'reverse' }}
+          transition={{ duration: 7, repeat: Infinity, repeatType: 'reverse' }}
         />
         <motion.div
-          className="absolute -bottom-20 -right-20 w-80 h-80 bg-indigo-600/20 dark:bg-indigo-900/20 rounded-lg mix-blend-multiply filter blur-xl"
-          animate={{ scale: [1, 0.8, 1], x: [0, -15, 0], y: [0, -20, 0] }}
-          transition={{ duration: 9, repeat: 2, repeatType: 'reverse' }}
+          className="absolute -bottom-20 -right-20 w-80 h-80 bg-red-200/20 dark:bg-red-600/20 rounded-full mix-blend-multiply filter blur-3xl"
+          animate={{ scale: [1, 1.3, 1], x: [0, -15, 0], y: [0, -20, 0] }}
+          transition={{ duration: 9, repeat: Infinity, repeatType: 'reverse' }}
         />
       </div>
     </div>
