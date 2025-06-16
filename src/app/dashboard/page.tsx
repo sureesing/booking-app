@@ -16,6 +16,9 @@ import {
   Legend,
 } from 'chart.js';
 
+// Force dynamic rendering to skip prerendering
+export const dynamic = 'force-dynamic';
+
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend);
 
@@ -35,12 +38,12 @@ export default function DashboardPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const emailFromUrl = searchParams.get('email') || '';
+  const emailFromUrl = searchParams?.get('email') || '';
   const [email, setEmail] = useState(emailFromUrl);
 
   // Check for stored email and validate session
   useEffect(() => {
-    const storedEmail = localStorage.getItem('userEmail');
+    const storedEmail = typeof window !== 'undefined' ? localStorage.getItem('userEmail') : null;
     if (!emailFromUrl && storedEmail) {
       setEmail(storedEmail);
       router.replace(`/dashboard?email=${encodeURIComponent(storedEmail)}`);
@@ -52,7 +55,7 @@ export default function DashboardPage() {
 
   // Handle dark mode
   useEffect(() => {
-    const savedMode = localStorage.getItem('darkMode');
+    const savedMode = typeof window !== 'undefined' ? localStorage.getItem('darkMode') : null;
     if (savedMode === 'true') {
       setIsDark(true);
       document.documentElement.classList.add('dark');
@@ -75,6 +78,7 @@ export default function DashboardPage() {
           method: 'GET',
           mode: 'cors',
           credentials: 'omit',
+          cache: 'no-store', // Prevent caching during build
         });
 
         if (!response.ok) {
@@ -82,14 +86,16 @@ export default function DashboardPage() {
         }
 
         const data = await response.json();
-        if (data.success) {
-          setBookings(data.bookings || []);
+        if (data.success && Array.isArray(data.bookings)) {
+          setBookings(data.bookings);
         } else {
           setError(data.message || 'Failed to fetch bookings');
+          setBookings([]);
         }
       } catch (err) {
         console.error('API error:', err);
         setError('Failed to connect to server. Please try again later.');
+        setBookings([]);
       } finally {
         setIsLoading(false);
       }
@@ -97,32 +103,38 @@ export default function DashboardPage() {
 
     if (email) {
       fetchBookings();
+    } else {
+      setIsLoading(false);
     }
   }, [email]);
 
   const handleToggle = () => {
     setIsDark((prev) => {
       const newMode = !prev;
-      localStorage.setItem('darkMode', newMode.toString());
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('darkMode', newMode.toString());
+      }
       document.documentElement.classList.toggle('dark', newMode);
       return newMode;
     });
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('userEmail');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('userEmail');
+    }
     router.push('/');
   };
 
   // Calculate statistics
   const totalBookings = bookings.length;
-  const uniqueEmails = [...new Set(bookings.map((b) => b.email.toLowerCase()))].length;
+  const uniqueEmails = [...new Set(bookings.map((b) => b.email?.toLowerCase() || ''))].length;
 
   // Time slot distribution
-  const timeSlotCounts = bookings.reduce((acc, booking) => {
+  const timeSlotCounts = bookings.reduce((acc: Record<string, number>, booking: Booking) => {
     acc[booking.timeSlot] = (acc[booking.timeSlot] || 0) + 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {});
   const timeSlotData = {
     labels: Object.keys(timeSlotCounts),
     datasets: [
@@ -137,11 +149,11 @@ export default function DashboardPage() {
   };
 
   // Daily bookings (mocked)
-  const dailyBookings = bookings.reduce((acc) => {
+  const dailyBookings = bookings.reduce((acc: Record<string, number>) => {
     const date = '16/6/2025'; // แก้เป็น date parsing จริงถ้ามีข้อมูล
     acc[date] = (acc[date] || 0) + 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {});
   const dailyData = {
     labels: Object.keys(dailyBookings),
     datasets: [
@@ -171,7 +183,7 @@ export default function DashboardPage() {
           <div className="hidden md:flex items-center space-x-6">
             <div className="flex items-center space-x-2 text-gray-950 dark:text-gray-100">
               <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-              <span className="text-sm font-medium">{email}</span>
+              <span className="text-sm font-medium">{email || 'Guest'}</span>
             </div>
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
@@ -236,7 +248,7 @@ export default function DashboardPage() {
               <div className="px-4 py-4 flex flex-col space-y-4">
                 <div className="flex items-center space-x-2 text-gray-950 dark:text-gray-100">
                   <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                  <span className="text-sm font-medium">{email}</span>
+                  <span className="text-sm font-medium">{email || 'Guest'}</span>
                 </div>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
