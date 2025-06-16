@@ -14,15 +14,15 @@ export default function LoginPage() {
 
   // Check for stored email and redirect if logged in
   useEffect(() => {
-    const storedEmail = localStorage.getItem('userEmail');
+    const storedEmail = typeof window !== 'undefined' ? localStorage.getItem('userEmail') : null;
     if (storedEmail) {
       router.replace(`/dashboard?email=${encodeURIComponent(storedEmail)}`);
     }
-  }, [router]); // เพิ่ม router ใน dependency array
+  }, [router]);
 
   // Load dark mode from localStorage
   useEffect(() => {
-    const savedMode = localStorage.getItem('darkMode');
+    const savedMode = typeof window !== 'undefined' ? localStorage.getItem('darkMode') : null;
     if (savedMode === 'true') {
       setIsDark(true);
       document.documentElement.classList.add('dark');
@@ -34,7 +34,9 @@ export default function LoginPage() {
   const handleToggle = () => {
     setIsDark((prev) => {
       const newMode = !prev;
-      localStorage.setItem('darkMode', newMode.toString());
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('darkMode', newMode.toString());
+      }
       document.documentElement.classList.toggle('dark', newMode);
       return newMode;
     });
@@ -70,8 +72,10 @@ export default function LoginPage() {
 
       const data = await response.json();
       if (data.success) {
-        localStorage.setItem('userEmail', email); // เก็บ email หลัง login สำเร็จ
-        router.push(`/booking?email=${encodeURIComponent(email)}`);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('userEmail', email);
+        }
+        router.push(`/dashboard?email=${encodeURIComponent(email)}`);
       } else {
         setError(data.message || 'Invalid email or password');
       }
