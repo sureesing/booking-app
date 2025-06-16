@@ -123,7 +123,7 @@ export default function BookingsPage() {
               <Calendar className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
             </motion.div>
             <span className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400">
-              BookingHub
+              iMedReserve
             </span>
           </div>
           <div className="hidden md:flex items-center space-x-6">
@@ -263,7 +263,7 @@ export default function BookingsPage() {
           className="w-full max-w-lg p-8 sm:p-10 rounded-3xl bg-white/90 dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500 hover:scale-105"
         >
           <h2 className="text-4xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400 mb-8 tracking-tight">
-            Your Booking History
+            ประวัติการจองของคุณ
           </h2>
           <AnimatePresence>
             {error && (

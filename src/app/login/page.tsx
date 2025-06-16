@@ -84,14 +84,11 @@ export default function LoginPage() {
               <span className="text-sm">{isDark ? '☀️' : '🌙'}</span>
             </div>
           </div>
-          <span className="ml-4 text-sm font-semibold text-gray-900 dark:text-gray-100 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
-            {isDark ? 'Light Mode' : 'Dark Mode'}
-          </span>
         </label>
       </div>
 
       <div className="w-full max-w-md p-8 rounded-3xl bg-white/90 dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500 hover:scale-105">
-        <h2 className="text-4xl font-bold mb-8 text-center text-gray-900 dark:text-gray-100 tracking-tight">Sign In</h2>
+        <h2 className="text-4xl font-bold mb-8 text-center text-gray-900 dark:text-gray-100 tracking-tight">เข้าสู่ระบบ</h2>
         {error && (
           <p className="text-center text-sm text-red-600 dark:text-red-400 mb-4">{error}</p>
         )}

@@ -170,7 +170,7 @@ export default function DashboardPage() {
               <Calendar className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
             </motion.div>
             <span className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400">
-              BookingHub
+              iMedReserve
             </span>
           </div>
           <div className="hidden md:flex items-center space-x-6">

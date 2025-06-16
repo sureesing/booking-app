@@ -16,11 +16,25 @@ export default function BookingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const email = searchParams.get('email') || '';
+  const emailFromUrl = searchParams.get('email') || '';
+  const [email, setEmail] = useState(emailFromUrl);
 
   const { scrollYProgress } = useScroll();
   const headerOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0.9]);
 
+  // Check for stored email and validate session
+  useEffect(() => {
+    const storedEmail = localStorage.getItem('userEmail');
+    if (!emailFromUrl && storedEmail) {
+      setEmail(storedEmail);
+      router.replace(`/booking?email=${encodeURIComponent(storedEmail)}`);
+    } else if (!emailFromUrl && !storedEmail) {
+      setError('Please log in to book an appointment.');
+      router.push('/');
+    }
+  }, [emailFromUrl, router]);
+
+  // Handle dark mode
   useEffect(() => {
     const savedMode = localStorage.getItem('darkMode');
     if (savedMode === 'true') {
@@ -41,6 +55,7 @@ export default function BookingPage() {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('userEmail');
     router.push('/');
   };
 
@@ -58,7 +73,7 @@ export default function BookingPage() {
       formData.append('email', email);
       formData.append('firstName', firstName);
       formData.append('lastName', lastName);
-      formData.append('timeSlot', timeSlot);
+      formData.append('timeSlot', timeSlot); // Ensure timeSlot is sent as a string
       formData.append('details', details);
 
       const response = await fetch(
@@ -81,7 +96,6 @@ export default function BookingPage() {
 
       const data = await response.json();
       if (data.success) {
-        // Redirect to Bookings page with email
         router.push(`/bookings?email=${encodeURIComponent(email)}`);
         setFirstName('');
         setLastName('');
@@ -99,19 +113,19 @@ export default function BookingPage() {
   };
 
   const timeSlots = [
-    { display: '00:00-01:00', value: '00:00-01:00' },
-    { display: '01:00-02:00', value: '01:00-02:00' },
-    { display: '02:00-03:00', value: '02:00-03:00' },
-    { display: '03:00-04:00', value: '03:00-04:00' },
-    { display: '04:00-05:00', value: '04:00-05:00' },
-    { display: '05:00-06:00', value: '05:00-06:00' },
-    { display: '06:00-07:00', value: '06:00-07:00' },
-    { display: '07:00-08:00', value: '07:00-08:00' },
-    { display: '08:00-09:00', value: '08:00-09:00' },
+    { display: 'คาบ 0', value: '07:30-08:30' },
+    { display: 'คาบ 1', value: '08:30-09:30' },
+    { display: 'คาบ 2', value: '09:30-10:30' },
+    { display: 'คาบ 3', value: '10:30-11:30' },
+    { display: 'คาบ 4', value: '11:30-12:30' },
+    { display: 'คาบ 5', value: '12:30-13:30' },
+    { display: 'คาบ 6', value: '13:30-14:30' },
+    { display: 'คาบ 7', value: '14:30-15:30' },
+    { display: 'คาบ 8', value: '15:30-16:30' },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-red-50 dark:from-indigo-950 dark:via-gray-900 dark:to-red-950 transition-colors duration-700">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-100 via-indigo-100 to-red-100 dark:from-indigo-950 dark:via-gray-900 dark:to-red-950 transition-colors duration-700">
       {/* Header */}
       <motion.nav
         style={{ opacity: headerOpacity }}
@@ -126,19 +140,19 @@ export default function BookingPage() {
               <Calendar className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
             </motion.div>
             <span className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400">
-              BookingHub
+              iMedReserve
             </span>
           </div>
           <div className="hidden md:flex items-center space-x-6">
-            <div className="flex items-center space-x-2 text-gray-900 dark:text-gray-100">
+            <div className="flex items-center space-x-2 text-gray-950 dark:text-gray-100">
               <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               <span className="text-sm font-medium">{email}</span>
             </div>
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => router.push('/dashboard')}
-              className="text-gray-900 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
+              onClick={() => router.push(`/dashboard?email=${encodeURIComponent(email)}`)}
+              className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
             >
               <LayoutDashboard className="w-4 h-4" />
               <span>Dashboard</span>
@@ -147,7 +161,7 @@ export default function BookingPage() {
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
               whileTap={{ scale: 0.95 }}
               onClick={handleViewBookings}
-              className="text-gray-900 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
+              className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
             >
               <Calendar className="w-4 h-4" />
               <span>Bookings</span>
@@ -166,7 +180,7 @@ export default function BookingPage() {
                   <span className="text-sm">{isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}</span>
                 </motion.div>
               </div>
-              <span className="ml-4 text-sm font-semibold text-gray-900 dark:text-gray-100 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
+              <span className="ml-4 text-sm font-semibold text-gray-950 dark:text-gray-100 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
                 {isDark ? 'Light Mode' : 'Dark Mode'}
               </span>
             </label>
@@ -184,7 +198,7 @@ export default function BookingPage() {
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-gray-900 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none"
+              className="text-gray-950 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none"
             >
               <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'} />
@@ -202,15 +216,15 @@ export default function BookingPage() {
               className="md:hidden bg-white/95 dark:bg-gray-850/95 backdrop-blur-2xl border-t border-gray-200/50 dark:border-[rgba(99,102,241,0.5)]"
             >
               <div className="px-4 py-4 flex flex-col space-y-4">
-                <div className="flex items-center space-x-2 text-gray-900 dark:text-gray-100">
+                <div className="flex items-center space-x-2 text-gray-950 dark:text-gray-100">
                   <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                   <span className="text-sm font-medium">{email}</span>
                 </div>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => router.push('/dashboard')}
-                  className="text-gray-900 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
+                  onClick={() => router.push(`/dashboard?email=${encodeURIComponent(email)}`)}
+                  className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
                 >
                   <LayoutDashboard className="w-4 h-4" />
                   <span>Dashboard</span>
@@ -219,7 +233,7 @@ export default function BookingPage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleViewBookings}
-                  className="text-gray-900 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
+                  className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
                 >
                   <Calendar className="w-4 h-4" />
                   <span>Bookings</span>
@@ -238,7 +252,7 @@ export default function BookingPage() {
                       <span className="text-sm">{isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}</span>
                     </motion.div>
                   </div>
-                  <span className="ml-4 text-sm font-semibold text-gray-900 dark:text-gray-100 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
+                  <span className="ml-4 text-sm font-semibold text-gray-950 dark:text-gray-100 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
                     {isDark ? 'Light Mode' : 'Dark Mode'}
                   </span>
                 </label>
@@ -263,10 +277,10 @@ export default function BookingPage() {
           initial={{ opacity: 0, y: 50, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="w-full max-w-lg p-8 sm:p-10 rounded-3xl bg-white/95 dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500 hover:scale-105"
+          className="w-full max-w-lg p-8 sm:p-10 rounded-3xl bg-white/90 dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500 hover:scale-105"
         >
           <h2 className="text-4xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400 mb-8 tracking-tight">
-            Book Your Appointment
+            ระบบจองการใช้ห้องพยาบาล
           </h2>
           <AnimatePresence>
             {error && (
@@ -284,30 +298,30 @@ export default function BookingPage() {
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="firstName" className="block mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  First Name
+                <label htmlFor="firstName" className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
+                  ชื่อจริง
                 </label>
                 <motion.input
                   whileHover={{ scale: 1.02 }}
                   whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
                   type="text"
                   id="firstName"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/90 dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   required
                 />
               </div>
               <div>
-                <label htmlFor="lastName" className="block mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  Last Name
+                <label htmlFor="lastName" className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
+                  นามสกุล
                 </label>
                 <motion.input
                   whileHover={{ scale: 1.02 }}
                   whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
                   type="text"
                   id="lastName"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/90 dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   required
@@ -315,8 +329,8 @@ export default function BookingPage() {
               </div>
             </div>
             <div>
-              <label className="block mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                Time Slot
+              <label className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
+                เวลาในการเข้าใช้งาน
               </label>
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
                 {timeSlots.map((slot) => (
@@ -327,7 +341,7 @@ export default function BookingPage() {
                     className={`flex items-center justify-center w-16 h-16 rounded-full border-2 cursor-pointer transition-all duration-300 ${
                       timeSlot === slot.value
                         ? 'bg-gradient-to-r from-indigo-600 to-red-600 text-white border-indigo-600 dark:border-indigo-500 shadow-lg'
-                        : 'bg-white/80 dark:bg-gray-700/80 border-gray-300 dark:border-indigo-600 text-gray-900 dark:text-gray-100 hover:bg-indigo-100 dark:hover:bg-indigo-900/50'
+                        : 'bg-white/90 dark:bg-gray-700/80 border-gray-300 dark:border-indigo-600 text-gray-950 dark:text-gray-100 hover:bg-indigo-100 dark:hover:bg-indigo-900/50'
                     }`}
                     onClick={() => setTimeSlot(slot.value)}
                   >
@@ -337,18 +351,18 @@ export default function BookingPage() {
               </div>
             </div>
             <div>
-              <label htmlFor="details" className="block mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                Booking Details
+              <label htmlFor="details" className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
+                อาการที่เป็น
               </label>
               <motion.textarea
                 whileHover={{ scale: 1.02 }}
                 whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
                 id="details"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/90 dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
                 value={details}
                 onChange={(e) => setDetails(e.target.value)}
                 rows={5}
-                placeholder="Enter your booking details (e.g., purpose of appointment)"
+                placeholder="ใส่รายละเอียดอาการที่เป็น เช่น ปวดหัว ท้องเสีย คลื่นไส้ อาเจียน"
                 required
               />
             </div>
@@ -365,12 +379,12 @@ export default function BookingPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                   </svg>
-                  <span>Booking...</span>
+                  <span>ยืนยันการจอง...</span>
                 </span>
               ) : (
                 <span className="flex items-center space-x-2">
                   <Calendar className="w-5 h-5" />
-                  <span>Book Now</span>
+                  <span>ยืนยันการจอง</span>
                 </span>
               )}
             </motion.button>
