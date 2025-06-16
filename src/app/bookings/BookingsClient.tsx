@@ -89,7 +89,7 @@ export default function BookingsClient() {
         } else {
           setError(data.message || 'ไม่สามารถดึงข้อมูลการจองได้');
         }
-      } catch (err: any) {
+      } catch (err: Error) {
         console.error('Fetch error:', err);
         setError(err.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองอีกครั้ง');
       } finally {
@@ -160,7 +160,7 @@ export default function BookingsClient() {
               className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
             >
               <LayoutDashboard className="w-4 h-4" />
-              <span>Dashboard</span>
+              <span>แดชบอร์ด</span>
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
@@ -169,7 +169,7 @@ export default function BookingsClient() {
               className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
             >
               <Calendar className="w-4 h-4" />
-              <span>Book Now</span>
+              <span>จอง</span>
             </motion.button>
             <label className="relative inline-flex items-center cursor-pointer group">
               <input
@@ -182,11 +182,11 @@ export default function BookingsClient() {
                 <motion.div
                   className="absolute left-1.5 top-1.5 w-7 h-7 bg-white dark:bg-gray-100 rounded-full shadow-lg flex items-center justify-center transform peer-checked:translate-x-10 transition-transform duration-500"
                 >
-                  <span className="text-sm">{isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}</span>
+                  {isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}
                 </motion.div>
               </div>
               <span className="ml-4 text-sm font-semibold text-gray-950 dark:text-gray-100 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
-                {isDark ? 'Light Mode' : 'Dark Mode'}
+                {isDark ? 'โหมดสว่าง' : 'โหมดมืด'}
               </span>
             </label>
             <motion.button
@@ -196,7 +196,7 @@ export default function BookingsClient() {
               className="bg-gradient-to-r from-indigo-600 to-red-600 dark:from-indigo-700 dark:to-red-700 text-white text-sm font-medium py-2 px-5 rounded-full shadow-md hover:shadow-lg transition-all duration-300 flex items-center space-x-2"
             >
               <LogOut className="w-4 h-4" />
-              <span>Logout</span>
+              <span>ออกจากระบบ</span>
             </motion.button>
           </div>
           <div className="md:hidden flex items-center">
@@ -232,7 +232,7 @@ export default function BookingsClient() {
                   className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
                 >
                   <LayoutDashboard className="w-4 h-4" />
-                  <span>Dashboard</span>
+                  <span>แดชบอร์ด</span>
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -241,7 +241,7 @@ export default function BookingsClient() {
                   className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
                 >
                   <Calendar className="w-4 h-4" />
-                  <span>Book Now</span>
+                  <span>จอง</span>
                 </motion.button>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -254,11 +254,11 @@ export default function BookingsClient() {
                     <motion.div
                       className="absolute left-1.5 top-1.5 w-7 h-7 bg-white dark:bg-gray-100 rounded-full shadow-lg flex items-center justify-center transform peer-checked:translate-x-10 transition-transform duration-500"
                     >
-                      <span className="text-sm">{isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}</span>
+                      {isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}
                     </motion.div>
                   </div>
                   <span className="ml-4 text-sm font-semibold text-gray-950 dark:text-gray-100 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
-                    {isDark ? 'Light Mode' : 'Dark Mode'}
+                    {isDark ? 'โหมดสว่าง' : 'โหมดมืด'}
                   </span>
                 </label>
                 <motion.button
@@ -268,7 +268,7 @@ export default function BookingsClient() {
                   className="bg-gradient-to-r from-indigo-600 to-red-600 dark:from-indigo-700 dark:to-red-700 text-white text-sm font-medium py-2 px-5 rounded-full shadow-md hover:shadow-lg transition-all duration-300 flex items-center space-x-2"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span>Logout</span>
+                  <span>ออกจากระบบ</span>
                 </motion.button>
               </div>
             </motion.div>
@@ -325,7 +325,7 @@ export default function BookingsClient() {
           </div>
           {isLoading ? (
             <div className="flex justify-center items-center h-64">
-              <svg className="animate-spin h-8 w-8 text-indigo-600" viewBox="0 0 24 24">
+              <svg className="animate-spin h-8 w-8 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
@@ -376,7 +376,8 @@ export default function BookingsClient() {
         />
         <motion.div
           className="absolute -bottom-20 -right-20 w-80 h-80 bg-red-200/20 dark:bg-red-600/20 rounded-full mix-blend-multiply filter blur-3xl"
-          animate={{ scale: 'none' }}
+          animate={{ scale: [1, 1.3, 1], x: [0, -15, 0], y: [0, -20, 0] }}
+          transition={{ duration: 9, repeat: Infinity, repeatType: 'reverse' }}
         />
       </div>
     </div>
