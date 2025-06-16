@@ -75,7 +75,7 @@ export default function LoginPage() {
         if (typeof window !== 'undefined') {
           localStorage.setItem('userEmail', email);
         }
-        router.push(`/dashboard?email=${encodeURIComponent(email)}`);
+        router.push(`/booking?email=${encodeURIComponent(email)}`);
       } else {
         setError(data.message || 'Invalid email or password');
       }
