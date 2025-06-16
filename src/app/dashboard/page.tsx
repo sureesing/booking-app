@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, User, LogOut, Moon, Sun, LayoutDashboard } from 'lucide-react';
+import { Calendar, User, LogOut, Moon, Sun } from 'lucide-react'; // ลบ LayoutDashboard
 import { Bar, Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -69,7 +69,7 @@ export default function DashboardPage() {
       try {
         const url = `${
           process.env.NEXT_PUBLIC_SCRIPT_URL ||
-          'https://script.google.com/macros/s/AKfycbylwgt2SA6U5w-LT-zv0arUUzONv9Z1azuzMCYefM8SQ_Q906lvtSruuvH3IF-p5Y4/exec'
+          'https://script.google.com/macros/s/AKfycbxOAMq6q5ir0e_j1_2Pc_2KG9r_LovObThQlaO8-LUrHij9zzmGR-mYbtzEgwnjhoNl/exec'
         }?action=getBookings`;
         const response = await fetch(url, {
           method: 'GET',
@@ -119,8 +119,8 @@ export default function DashboardPage() {
   const uniqueEmails = [...new Set(bookings.map((b) => b.email.toLowerCase()))].length;
 
   // Time slot distribution
-  const timeSlotCounts = bookings.reduce((acc, booking) => {
-    acc[booking.timeSlot] = (acc[booking.timeSlot] || 0) + 1;
+  const timeSlotCounts = bookings.reduce((acc, curr) => {
+    acc[curr.timeSlot] = (acc[curr.timeSlot] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
   const timeSlotData = {
@@ -137,8 +137,8 @@ export default function DashboardPage() {
   };
 
   // Daily bookings (mocked)
-  const dailyBookings = bookings.reduce((acc, booking) => {
-    const date = '16/6/2025'; // Replace with actual date parsing if available
+  const dailyBookings = bookings.reduce((acc, curr) => {
+    const date = '16/6/2025'; // แก้เป็น date parsing จริงถ้ามีข้อมูล
     acc[date] = (acc[date] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
@@ -158,15 +158,10 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-100 via-indigo-100 to-red-100 dark:from-indigo-950 dark:via-gray-900 dark:to-red-950 transition-colors duration-700">
       {/* Header */}
-      <motion.nav
-        className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-850/95 backdrop-blur-2xl shadow-md border-b border-gray-200/50 dark:border-[rgba(99,102,241,0.5)]"
-      >
+      <motion.nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-850/95 backdrop-blur-2xl shadow-md border-b border-gray-200/50 dark:border-[rgba(99,102,241,0.5)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
           <div className="flex items-center space-x-3">
-            <motion.div
-              animate={{ rotate: [0, 360] }}
-              transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
-            >
+            <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}>
               <Calendar className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
             </motion.div>
             <span className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400">
@@ -197,16 +192,9 @@ export default function DashboardPage() {
               <span>Bookings</span>
             </motion.button>
             <label className="relative inline-flex items-center cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={isDark}
-                onChange={handleToggle}
-                className="sr-only peer"
-              />
+              <input type="checkbox" checked={isDark} onChange={handleToggle} className="sr-only peer" />
               <div className="w-20 h-10 bg-gray-200 peer-checked:bg-gradient-to-r peer-checked:from-indigo-700 peer-checked:to-red-700 rounded-full transition-all duration-500 shadow-[0_2px_8px_rgba(0,0,0,0.15)] dark:shadow-[0_2px_8px_rgba(99,102,241,0.3)] group-hover:shadow-[0_2px_12px_rgba(0,0,0,0.2)] dark:group-hover:shadow-[0_2px_12px_rgba(99,102,241,0.5)]">
-                <motion.div
-                  className="absolute left-1.5 top-1.5 w-7 h-7 bg-white dark:bg-gray-100 rounded-full shadow-lg flex items-center justify-center transform peer-checked:translate-x-10 transition-transform duration-500"
-                >
+                <motion.div className="absolute left-1.5 top-1.5 w-7 h-7 bg-white dark:bg-gray-100 rounded-full shadow-lg flex items-center justify-center transform peer-checked:translate-x-10 transition-transform duration-500">
                   <span className="text-sm">{isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}</span>
                 </motion.div>
               </div>
@@ -269,16 +257,9 @@ export default function DashboardPage() {
                   <span>Bookings</span>
                 </motion.button>
                 <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isDark}
-                    onChange={handleToggle}
-                    className="sr-only peer"
-                  />
+                  <input type="checkbox" checked={isDark} onChange={handleToggle} className="sr-only peer" />
                   <div className="w-20 h-10 bg-gray-200 peer-checked:bg-gradient-to-r peer-checked:from-indigo-700 peer-checked:to-red-700 rounded-full transition-all duration-500 shadow-[0_2px_8px_rgba(0,0,0,0.15)] dark:shadow-[0_2px_8px_rgba(99,102,241,0.3)] group-hover:shadow-[0_2px_12px_rgba(0,0,0,0.2)] dark:group-hover:shadow-[0_2px_12px_rgba(99,102,241,0.5)]">
-                    <motion.div
-                      className="absolute left-1.5 top-1.5 w-7 h-7 bg-white dark:bg-gray-100 rounded-full shadow-lg flex items-center justify-center transform peer-checked:translate-x-10 transition-transform duration-500"
-                    >
+                    <motion.div className="absolute left-1.5 top-1.5 w-7 h-7 bg-white dark:bg-gray-100 rounded-full shadow-lg flex items-center justify-center transform peer-checked:translate-x-10 transition-transform duration-500">
                       <span className="text-sm">{isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}</span>
                     </motion.div>
                   </div>
