@@ -5,27 +5,41 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { Calendar, User, LogOut, Moon, Sun, LayoutDashboard } from 'lucide-react';
 
-// Define Booking interface to match Google Sheet and script output
+// Define Booking interface
 interface Booking {
   email: string;
-  firstName: string; // Maps to 'fristname' in Google Sheet
+  firstName: string;
   lastName: string;
   timeSlot: string;
 }
 
 export default function BookingsPage() {
   const [isDark, setIsDark] = useState(false);
-  const [bookings, setBookings] = useState<Booking[]>([]); // Add type to state
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const email = searchParams.get('email') || '';
+  const emailFromUrl = searchParams.get('email') || '';
+  const [email, setEmail] = useState(emailFromUrl);
 
   const { scrollYProgress } = useScroll();
   const headerOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0.9]);
 
+  // Check for stored email and validate session
+  useEffect(() => {
+    const storedEmail = localStorage.getItem('userEmail');
+    if (!emailFromUrl && storedEmail) {
+      setEmail(storedEmail);
+      router.replace(`/bookings?email=${encodeURIComponent(storedEmail)}`);
+    } else if (!emailFromUrl && !storedEmail) {
+      setError('Please log in to access your bookings.');
+      router.push('/');
+    }
+  }, [emailFromUrl, router]);
+
+  // Handle dark mode
   useEffect(() => {
     const savedMode = localStorage.getItem('darkMode');
     if (savedMode === 'true') {
@@ -36,6 +50,7 @@ export default function BookingsPage() {
     }
   }, []);
 
+  // Fetch bookings
   useEffect(() => {
     const fetchBookings = async () => {
       setIsLoading(true);
@@ -45,22 +60,17 @@ export default function BookingsPage() {
           process.env.NEXT_PUBLIC_SCRIPT_URL ||
           'https://script.google.com/macros/s/AKfycbxOAMq6q5ir0e_j1_2Pc_2KG9r_LovObThQlaO8-LUrHij9zzmGR-mYbtzEgwnjhoNl/exec'
         }?action=getBookings`;
-        console.log('Fetching bookings from:', url);
         const response = await fetch(url, {
           method: 'GET',
           mode: 'cors',
           credentials: 'omit',
         });
 
-        console.log('Response status:', response.status);
-
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
-        console.log('Fetched data:', data);
-
         if (data.success) {
           setBookings(data.bookings || []);
         } else {
@@ -74,8 +84,10 @@ export default function BookingsPage() {
       }
     };
 
-    fetchBookings();
-  }, []);
+    if (email) {
+      fetchBookings();
+    }
+  }, [email]);
 
   const handleToggle = () => {
     setIsDark((prev) => {
@@ -87,18 +99,16 @@ export default function BookingsPage() {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('userEmail');
     router.push('/');
   };
 
-  const filteredBookings = bookings.filter((booking) => {
-    console.log('Comparing booking.email:', booking.email, 'with email:', email);
-    return booking.email.toLowerCase() === email.toLowerCase();
-  });
-
-  console.log('Filtered bookings:', filteredBookings);
+  const filteredBookings = bookings.filter((booking) =>
+    booking.email.toLowerCase() === email.toLowerCase()
+  );
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-red-50 dark:from-indigo-950 dark:via-gray-900 dark:to-red-950 transition-colors duration-700">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-100 via-indigo-100 to-red-100 dark:from-indigo-950 dark:via-gray-900 dark:to-red-950 transition-colors duration-700">
       {/* Header */}
       <motion.nav
         style={{ opacity: headerOpacity }}
@@ -117,15 +127,15 @@ export default function BookingsPage() {
             </span>
           </div>
           <div className="hidden md:flex items-center space-x-6">
-            <div className="flex items-center space-x-2 text-gray-900 dark:text-gray-100">
+            <div className="flex items-center space-x-2 text-gray-950 dark:text-gray-100">
               <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               <span className="text-sm font-medium">{email}</span>
             </div>
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => router.push('/dashboard')}
-              className="text-gray-900 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
+              onClick={() => router.push(`/dashboard?email=${encodeURIComponent(email)}`)}
+              className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
             >
               <LayoutDashboard className="w-4 h-4" />
               <span>Dashboard</span>
@@ -134,7 +144,7 @@ export default function BookingsPage() {
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
               whileTap={{ scale: 0.95 }}
               onClick={() => router.push(`/booking?email=${encodeURIComponent(email)}`)}
-              className="text-gray-900 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
+              className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
             >
               <Calendar className="w-4 h-4" />
               <span>Book</span>
@@ -153,7 +163,7 @@ export default function BookingsPage() {
                   <span className="text-sm">{isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}</span>
                 </motion.div>
               </div>
-              <span className="ml-4 text-sm font-semibold text-gray-900 dark:text-gray-100 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
+              <span className="ml-4 text-sm font-semibold text-gray-950 dark:text-gray-100 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
                 {isDark ? 'Light Mode' : 'Dark Mode'}
               </span>
             </label>
@@ -171,7 +181,7 @@ export default function BookingsPage() {
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-gray-900 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none"
+              className="text-gray-950 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none"
             >
               <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'} />
@@ -189,15 +199,15 @@ export default function BookingsPage() {
               className="md:hidden bg-white/95 dark:bg-gray-850/95 backdrop-blur-2xl border-t border-gray-200/50 dark:border-[rgba(99,102,241,0.5)]"
             >
               <div className="px-4 py-4 flex flex-col space-y-4">
-                <div className="flex items-center space-x-2 text-gray-900 dark:text-gray-100">
+                <div className="flex items-center space-x-2 text-gray-950 dark:text-gray-100">
                   <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                   <span className="text-sm font-medium">{email}</span>
                 </div>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => router.push('/dashboard')}
-                  className="text-gray-900 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
+                  onClick={() => router.push(`/dashboard?email=${encodeURIComponent(email)}`)}
+                  className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
                 >
                   <LayoutDashboard className="w-4 h-4" />
                   <span>Dashboard</span>
@@ -206,7 +216,7 @@ export default function BookingsPage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => router.push(`/booking?email=${encodeURIComponent(email)}`)}
-                  className="text-gray-900 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
+                  className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
                 >
                   <Calendar className="w-4 h-4" />
                   <span>Book</span>
@@ -225,7 +235,7 @@ export default function BookingsPage() {
                       <span className="text-sm">{isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}</span>
                     </motion.div>
                   </div>
-                  <span className="ml-4 text-sm font-semibold text-gray-900 dark:text-gray-100 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
+                  <span className="ml-4 text-sm font-semibold text-gray-950 dark:text-gray-100 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
                     {isDark ? 'Light Mode' : 'Dark Mode'}
                   </span>
                 </label>
@@ -250,7 +260,7 @@ export default function BookingsPage() {
           initial={{ opacity: 0, y: 50, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="w-full max-w-lg p-8 sm:p-10 rounded-3xl bg-white/95 dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500 hover:scale-105"
+          className="w-full max-w-lg p-8 sm:p-10 rounded-3xl bg-white/90 dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500 hover:scale-105"
         >
           <h2 className="text-4xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400 mb-8 tracking-tight">
             Your Booking History
@@ -285,11 +295,11 @@ export default function BookingsPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="p-4 rounded-lg bg-white/80 dark:bg-gray-700/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
+                  className="p-4 rounded-lg bg-white/90 dark:bg-gray-700/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
                 >
                   <div className="flex items-center space-x-2">
                     <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    <p className="text-sm font-medium text-gray-950 dark:text-gray-100">
                       {booking.firstName} {booking.lastName}
                     </p>
                   </div>

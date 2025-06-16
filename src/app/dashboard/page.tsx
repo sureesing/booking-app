@@ -35,8 +35,22 @@ export default function DashboardPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const email = searchParams.get('email') || '';
+  const emailFromUrl = searchParams.get('email') || '';
+  const [email, setEmail] = useState(emailFromUrl);
 
+  // Check for stored email and validate session
+  useEffect(() => {
+    const storedEmail = localStorage.getItem('userEmail');
+    if (!emailFromUrl && storedEmail) {
+      setEmail(storedEmail);
+      router.replace(`/dashboard?email=${encodeURIComponent(storedEmail)}`);
+    } else if (!emailFromUrl && !storedEmail) {
+      setError('Please log in to access the dashboard.');
+      router.push('/');
+    }
+  }, [emailFromUrl, router]);
+
+  // Handle dark mode
   useEffect(() => {
     const savedMode = localStorage.getItem('darkMode');
     if (savedMode === 'true') {
@@ -47,6 +61,7 @@ export default function DashboardPage() {
     }
   }, []);
 
+  // Fetch bookings
   useEffect(() => {
     const fetchBookings = async () => {
       setIsLoading(true);
@@ -56,22 +71,17 @@ export default function DashboardPage() {
           process.env.NEXT_PUBLIC_SCRIPT_URL ||
           'https://script.google.com/macros/s/AKfycbylwgt2SA6U5w-LT-zv0arUUzONv9Z1azuzMCYefM8SQ_Q906lvtSruuvH3IF-p5Y4/exec'
         }?action=getBookings`;
-        console.log('Fetching bookings from:', url);
         const response = await fetch(url, {
           method: 'GET',
           mode: 'cors',
           credentials: 'omit',
         });
 
-        console.log('Response status:', response.status);
-
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
-        console.log('Fetched data:', data);
-
         if (data.success) {
           setBookings(data.bookings || []);
         } else {
@@ -85,8 +95,10 @@ export default function DashboardPage() {
       }
     };
 
-    fetchBookings();
-  }, []);
+    if (email) {
+      fetchBookings();
+    }
+  }, [email]);
 
   const handleToggle = () => {
     setIsDark((prev) => {
@@ -98,6 +110,7 @@ export default function DashboardPage() {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('userEmail');
     router.push('/');
   };
 
@@ -123,9 +136,8 @@ export default function DashboardPage() {
     ],
   };
 
-  // Daily bookings (mocked since date isn't provided in JSON)
+  // Daily bookings (mocked)
   const dailyBookings = bookings.reduce((acc, booking) => {
-    // Assuming date is in details or hardcoded for demo
     const date = '16/6/2025'; // Replace with actual date parsing if available
     acc[date] = (acc[date] || 0) + 1;
     return acc;
@@ -144,7 +156,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-red-50 dark:from-indigo-950 dark:via-gray-900 dark:to-red-950 transition-colors duration-700">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-100 via-indigo-100 to-red-100 dark:from-indigo-950 dark:via-gray-900 dark:to-red-950 transition-colors duration-700">
       {/* Header */}
       <motion.nav
         className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-850/95 backdrop-blur-2xl shadow-md border-b border-gray-200/50 dark:border-[rgba(99,102,241,0.5)]"
@@ -162,7 +174,7 @@ export default function DashboardPage() {
             </span>
           </div>
           <div className="hidden md:flex items-center space-x-6">
-            <div className="flex items-center space-x-2 text-gray-900 dark:text-gray-100">
+            <div className="flex items-center space-x-2 text-gray-950 dark:text-gray-100">
               <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               <span className="text-sm font-medium">{email}</span>
             </div>
@@ -170,7 +182,7 @@ export default function DashboardPage() {
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
               whileTap={{ scale: 0.95 }}
               onClick={() => router.push(`/booking?email=${encodeURIComponent(email)}`)}
-              className="text-gray-900 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
+              className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
             >
               <Calendar className="w-4 h-4" />
               <span>Book</span>
@@ -179,7 +191,7 @@ export default function DashboardPage() {
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
               whileTap={{ scale: 0.95 }}
               onClick={() => router.push(`/bookings?email=${encodeURIComponent(email)}`)}
-              className="text-gray-900 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
+              className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
             >
               <Calendar className="w-4 h-4" />
               <span>Bookings</span>
@@ -198,7 +210,7 @@ export default function DashboardPage() {
                   <span className="text-sm">{isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}</span>
                 </motion.div>
               </div>
-              <span className="ml-4 text-sm font-semibold text-gray-900 dark:text-gray-100 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
+              <span className="ml-4 text-sm font-semibold text-gray-950 dark:text-gray-100 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
                 {isDark ? 'Light Mode' : 'Dark Mode'}
               </span>
             </label>
@@ -216,7 +228,7 @@ export default function DashboardPage() {
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-gray-900 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none"
+              className="text-gray-950 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none"
             >
               <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'} />
@@ -234,7 +246,7 @@ export default function DashboardPage() {
               className="md:hidden bg-white/95 dark:bg-gray-850/95 backdrop-blur-2xl border-t border-gray-200/50 dark:border-[rgba(99,102,241,0.5)]"
             >
               <div className="px-4 py-4 flex flex-col space-y-4">
-                <div className="flex items-center space-x-2 text-gray-900 dark:text-gray-100">
+                <div className="flex items-center space-x-2 text-gray-950 dark:text-gray-100">
                   <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                   <span className="text-sm font-medium">{email}</span>
                 </div>
@@ -242,7 +254,7 @@ export default function DashboardPage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => router.push(`/booking?email=${encodeURIComponent(email)}`)}
-                  className="text-gray-900 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
+                  className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
                 >
                   <Calendar className="w-4 h-4" />
                   <span>Book</span>
@@ -251,7 +263,7 @@ export default function DashboardPage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => router.push(`/bookings?email=${encodeURIComponent(email)}`)}
-                  className="text-gray-900 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
+                  className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
                 >
                   <Calendar className="w-4 h-4" />
                   <span>Bookings</span>
@@ -270,7 +282,7 @@ export default function DashboardPage() {
                       <span className="text-sm">{isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}</span>
                     </motion.div>
                   </div>
-                  <span className="ml-4 text-sm font-semibold text-gray-900 dark:text-gray-100 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
+                  <span className="ml-4 text-sm font-semibold text-gray-950 dark:text-gray-100 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
                     {isDark ? 'Light Mode' : 'Dark Mode'}
                   </span>
                 </label>
@@ -295,7 +307,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 50, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="w-full max-w-4xl p-8 sm:p-10 rounded-3xl bg-white/95 dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500"
+          className="w-full max-w-4xl p-8 sm:p-10 rounded-3xl bg-white/90 dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500"
         >
           <h2 className="text-4xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400 mb-8 tracking-tight">
             Booking Statistics Dashboard
@@ -328,18 +340,18 @@ export default function DashboardPage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="p-6 rounded-lg bg-white/80 dark:bg-gray-700/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
+                  className="p-6 rounded-lg bg-white/90 dark:bg-gray-700/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
                 >
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Total Bookings</h3>
+                  <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100">Total Bookings</h3>
                   <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{totalBookings}</p>
                 </motion.div>
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="p-6 rounded-lg bg-white/80 dark:bg-gray-700/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
+                  className="p-6 rounded-lg bg-white/90 dark:bg-gray-700/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
                 >
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Unique Users</h3>
+                  <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100">Unique Users</h3>
                   <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{uniqueEmails}</p>
                 </motion.div>
               </div>
@@ -350,16 +362,20 @@ export default function DashboardPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="p-6 rounded-lg bg-white/80 dark:bg-gray-700/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
+                  className="p-6 rounded-lg bg-white/90 dark:bg-gray-700/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
                 >
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Bookings by Time Slot</h3>
+                  <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100 mb-4">Bookings by Time Slot</h3>
                   <Bar
                     data={timeSlotData}
                     options={{
                       responsive: true,
                       plugins: {
-                        legend: { position: 'top' },
-                        title: { display: true, text: 'Time Slot Distribution' },
+                        legend: { position: 'top', labels: { color: isDark ? '#F3F4F6' : '#111827' } },
+                        title: { display: true, text: 'Time Slot Distribution', color: isDark ? '#F3F4F6' : '#111827' },
+                      },
+                      scales: {
+                        y: { ticks: { color: isDark ? '#F3F4F6' : '#111827' } },
+                        x: { ticks: { color: isDark ? '#F3F4F6' : '#111827' } },
                       },
                     }}
                   />
@@ -368,16 +384,16 @@ export default function DashboardPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="p-6 rounded-lg bg-white/80 dark:bg-gray-700/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
+                  className="p-6 rounded-lg bg-white/90 dark:bg-gray-700/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
                 >
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Bookings by Day</h3>
+                  <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100 mb-4">Bookings by Day</h3>
                   <Pie
                     data={dailyData}
                     options={{
                       responsive: true,
                       plugins: {
-                        legend: { position: 'top' },
-                        title: { display: true, text: 'Daily Bookings' },
+                        legend: { position: 'top', labels: { color: isDark ? '#F3F4F6' : '#111827' } },
+                        title: { display: true, text: 'Daily Bookings', color: isDark ? '#F3F4F6' : '#111827' },
                       },
                     }}
                   />
