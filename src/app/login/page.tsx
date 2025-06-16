@@ -71,7 +71,7 @@ export default function LoginPage() {
       const data = await response.json();
       if (data.success) {
         localStorage.setItem('userEmail', email); // เก็บ email หลัง login สำเร็จ
-        router.push(`/dashboard?email=${encodeURIComponent(email)}`);
+        router.push(`/booking?email=${encodeURIComponent(email)}`);
       } else {
         setError(data.message || 'Invalid email or password');
       }

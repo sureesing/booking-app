@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, User, LogOut, Moon, Sun } from 'lucide-react'; // ลบ LayoutDashboard
+import { Calendar, User, LogOut, Moon, Sun } from 'lucide-react';
 import { Bar, Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -119,8 +119,8 @@ export default function DashboardPage() {
   const uniqueEmails = [...new Set(bookings.map((b) => b.email.toLowerCase()))].length;
 
   // Time slot distribution
-  const timeSlotCounts = bookings.reduce((acc, curr) => {
-    acc[curr.timeSlot] = (acc[curr.timeSlot] || 0) + 1;
+  const timeSlotCounts = bookings.reduce((acc, booking) => {
+    acc[booking.timeSlot] = (acc[booking.timeSlot] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
   const timeSlotData = {
@@ -137,7 +137,7 @@ export default function DashboardPage() {
   };
 
   // Daily bookings (mocked)
-  const dailyBookings = bookings.reduce((acc, curr) => {
+  const dailyBookings = bookings.reduce((acc) => {
     const date = '16/6/2025'; // แก้เป็น date parsing จริงถ้ามีข้อมูล
     acc[date] = (acc[date] || 0) + 1;
     return acc;
