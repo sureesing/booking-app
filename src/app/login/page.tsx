@@ -41,7 +41,7 @@ export default function LoginPage() {
       formData.append('email', email);
       formData.append('password', password);
 
-      const response = await fetch('https://script.google.com/macros/s/AKfycbxQIieWVEmkPNCwTkfjOiBJ687IsnNy1q4dOBYJNXWaPImPS07lBNyMT1tjzGYA71yB/exec', {
+      const response = await fetch('https://script.google.com/macros/s/AKfycbxOAMq6q5ir0e_j1_2Pc_2KG9r_LovObThQlaO8-LUrHij9zzmGR-mYbtzEgwnjhoNl/exec', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',

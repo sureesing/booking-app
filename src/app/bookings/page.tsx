@@ -5,14 +5,19 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { Calendar, User, LogOut, Moon, Sun, LayoutDashboard } from 'lucide-react';
 
-export default function BookingPage() {
+// Define Booking interface to match Google Sheet and script output
+interface Booking {
+  email: string;
+  firstName: string; // Maps to 'fristname' in Google Sheet
+  lastName: string;
+  timeSlot: string;
+}
+
+export default function BookingsPage() {
   const [isDark, setIsDark] = useState(false);
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [timeSlot, setTimeSlot] = useState('');
-  const [details, setDetails] = useState('');
+  const [bookings, setBookings] = useState<Booking[]>([]); // Add type to state
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -31,6 +36,47 @@ export default function BookingPage() {
     }
   }, []);
 
+  useEffect(() => {
+    const fetchBookings = async () => {
+      setIsLoading(true);
+      setError('');
+      try {
+        const url = `${
+          process.env.NEXT_PUBLIC_SCRIPT_URL ||
+          'https://script.google.com/macros/s/AKfycbxOAMq6q5ir0e_j1_2Pc_2KG9r_LovObThQlaO8-LUrHij9zzmGR-mYbtzEgwnjhoNl/exec'
+        }?action=getBookings`;
+        console.log('Fetching bookings from:', url);
+        const response = await fetch(url, {
+          method: 'GET',
+          mode: 'cors',
+          credentials: 'omit',
+        });
+
+        console.log('Response status:', response.status);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Fetched data:', data);
+
+        if (data.success) {
+          setBookings(data.bookings || []);
+        } else {
+          setError(data.message || 'Failed to fetch bookings');
+        }
+      } catch (err) {
+        console.error('API error:', err);
+        setError('Failed to connect to server. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBookings();
+  }, []);
+
   const handleToggle = () => {
     setIsDark((prev) => {
       const newMode = !prev;
@@ -44,71 +90,12 @@ export default function BookingPage() {
     router.push('/');
   };
 
-  const handleViewBookings = () => {
-    router.push(`/bookings?email=${encodeURIComponent(email)}`);
-  };
+  const filteredBookings = bookings.filter((booking) => {
+    console.log('Comparing booking.email:', booking.email, 'with email:', email);
+    return booking.email.toLowerCase() === email.toLowerCase();
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
-
-    try {
-      const formData = new URLSearchParams();
-      formData.append('email', email);
-      formData.append('firstName', firstName);
-      formData.append('lastName', lastName);
-      formData.append('timeSlot', timeSlot);
-      formData.append('details', details);
-
-      const response = await fetch(
-        process.env.NEXT_PUBLIC_SCRIPT_URL ||
-          'https://script.google.com/macros/s/AKfycbxOAMq6q5ir0e_j1_2Pc_2KG9r_LovObThQlaO8-LUrHij9zzmGR-mYbtzEgwnjhoNl/exec',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: formData.toString(),
-          mode: 'cors',
-          credentials: 'omit',
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        // Redirect to Bookings page with email
-        router.push(`/bookings?email=${encodeURIComponent(email)}`);
-        setFirstName('');
-        setLastName('');
-        setTimeSlot('');
-        setDetails('');
-      } else {
-        setError(data.message || 'Failed to book time slot');
-      }
-    } catch (err) {
-      console.error('API error:', err);
-      setError('Failed to connect to server. Please try again later.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const timeSlots = [
-    { display: '00:00-01:00', value: '00:00-01:00' },
-    { display: '01:00-02:00', value: '01:00-02:00' },
-    { display: '02:00-03:00', value: '02:00-03:00' },
-    { display: '03:00-04:00', value: '03:00-04:00' },
-    { display: '04:00-05:00', value: '04:00-05:00' },
-    { display: '05:00-06:00', value: '05:00-06:00' },
-    { display: '06:00-07:00', value: '06:00-07:00' },
-    { display: '07:00-08:00', value: '07:00-08:00' },
-    { display: '08:00-09:00', value: '08:00-09:00' },
-  ];
+  console.log('Filtered bookings:', filteredBookings);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-red-50 dark:from-indigo-950 dark:via-gray-900 dark:to-red-950 transition-colors duration-700">
@@ -146,11 +133,11 @@ export default function BookingPage() {
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
               whileTap={{ scale: 0.95 }}
-              onClick={handleViewBookings}
+              onClick={() => router.push(`/booking?email=${encodeURIComponent(email)}`)}
               className="text-gray-900 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
             >
               <Calendar className="w-4 h-4" />
-              <span>Bookings</span>
+              <span>Book</span>
             </motion.button>
             <label className="relative inline-flex items-center cursor-pointer group">
               <input
@@ -218,11 +205,11 @@ export default function BookingPage() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={handleViewBookings}
+                  onClick={() => router.push(`/booking?email=${encodeURIComponent(email)}`)}
                   className="text-gray-900 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
                 >
                   <Calendar className="w-4 h-4" />
-                  <span>Bookings</span>
+                  <span>Book</span>
                 </motion.button>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -266,7 +253,7 @@ export default function BookingPage() {
           className="w-full max-w-lg p-8 sm:p-10 rounded-3xl bg-white/95 dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500 hover:scale-105"
         >
           <h2 className="text-4xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400 mb-8 tracking-tight">
-            Book Your Appointment
+            Your Booking History
           </h2>
           <AnimatePresence>
             {error && (
@@ -281,100 +268,37 @@ export default function BookingPage() {
               </motion.p>
             )}
           </AnimatePresence>
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="firstName" className="block mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  First Name
-                </label>
-                <motion.input
-                  whileHover={{ scale: 1.02 }}
-                  whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
-                  type="text"
-                  id="firstName"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="lastName" className="block mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  Last Name
-                </label>
-                <motion.input
-                  whileHover={{ scale: 1.02 }}
-                  whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
-                  type="text"
-                  id="lastName"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  required
-                />
-              </div>
+          {isLoading ? (
+            <div className="flex justify-center items-center">
+              <svg className="animate-spin h-8 w-8 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
             </div>
-            <div>
-              <label className="block mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                Time Slot
-              </label>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
-                {timeSlots.map((slot) => (
-                  <motion.div
-                    key={slot.value}
-                    whileHover={{ scale: 1.1, boxShadow: '0 0 10px rgba(99,102,241,0.3)' }}
-                    whileTap={{ scale: 0.95 }}
-                    className={`flex items-center justify-center w-16 h-16 rounded-full border-2 cursor-pointer transition-all duration-300 ${
-                      timeSlot === slot.value
-                        ? 'bg-gradient-to-r from-indigo-600 to-red-600 text-white border-indigo-600 dark:border-indigo-500 shadow-lg'
-                        : 'bg-white/80 dark:bg-gray-700/80 border-gray-300 dark:border-indigo-600 text-gray-900 dark:text-gray-100 hover:bg-indigo-100 dark:hover:bg-indigo-900/50'
-                    }`}
-                    onClick={() => setTimeSlot(slot.value)}
-                  >
-                    <span className="text-sm font-medium">{slot.display}</span>
-                  </motion.div>
-                ))}
-              </div>
+          ) : filteredBookings.length === 0 ? (
+            <p className="text-center text-gray-600 dark:text-gray-300">No bookings found.</p>
+          ) : (
+            <div className="space-y-4">
+              {filteredBookings.map((booking, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="p-4 rounded-lg bg-white/80 dark:bg-gray-700/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
+                >
+                  <div className="flex items-center space-x-2">
+                    <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {booking.firstName} {booking.lastName}
+                    </p>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">Email: {booking.email}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Time Slot: {booking.timeSlot}</p>
+                </motion.div>
+              ))}
             </div>
-            <div>
-              <label htmlFor="details" className="block mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                Booking Details
-              </label>
-              <motion.textarea
-                whileHover={{ scale: 1.02 }}
-                whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
-                id="details"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
-                value={details}
-                onChange={(e) => setDetails(e.target.value)}
-                rows={5}
-                placeholder="Enter your booking details (e.g., purpose of appointment)"
-                required
-              />
-            </div>
-            <motion.button
-              whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
-              whileTap={{ scale: 0.95 }}
-              type="submit"
-              className="w-full bg-gradient-to-r from-indigo-600 to-red-600 hover:from-indigo-700 hover:to-red-700 dark:from-indigo-500 dark:to-red-500 dark:hover:from-indigo-600 dark:hover:to-red-600 text-white font-semibold py-3 px-4 rounded-lg shadow-lg hover:shadow-[0_0_15px_rgba(99,102,241,0.5)] transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <span className="flex items-center space-x-2">
-                  <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                  </svg>
-                  <span>Booking...</span>
-                </span>
-              ) : (
-                <span className="flex items-center space-x-2">
-                  <Calendar className="w-5 h-5" />
-                  <span>Book Now</span>
-                </span>
-              )}
-            </motion.button>
-          </form>
+          )}
         </motion.div>
       </div>
 
