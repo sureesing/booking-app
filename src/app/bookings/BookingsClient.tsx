@@ -89,9 +89,10 @@ export default function BookingsClient() {
         } else {
           setError(data.message || 'ไม่สามารถดึงข้อมูลการจองได้');
         }
-      } catch (err: Error) {
+      } catch (err: unknown) {
         console.error('Fetch error:', err);
-        setError(err.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองอีกครั้ง');
+        const errorMessage = err instanceof Error ? err.message : 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองอีกครั้ง';
+        setError(errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -370,12 +371,12 @@ export default function BookingsClient() {
       {/* Decorative Background Elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <motion.div
-          className="absolute -top-20 -left-20 w-64 h-64 bg-indigo-200/20 dark:bg-indigo-600/20 rounded-full mix-blend-multiply filter blur-3xl"
+          className="absolute -top-20 -left-20 w-64 h-64 bg-indigo-200/20 dark:bg-indigo-400/40 rounded-full mix-blend-multiply filter blur-3xl"
           animate={{ scale: [1, 1.2, 1], x: [0, 15, 0], y: [0, 20, 0] }}
           transition={{ duration: 7, repeat: Infinity, repeatType: 'reverse' }}
         />
         <motion.div
-          className="absolute -bottom-20 -right-20 w-80 h-80 bg-red-200/20 dark:bg-red-600/20 rounded-full mix-blend-multiply filter blur-3xl"
+          className="absolute -bottom-20 -right-20 w-80 h-80 bg-red-200/20 dark:bg-red-400/40 rounded-full mix-blend-multiply filter blur-3xl"
           animate={{ scale: [1, 1.3, 1], x: [0, -15, 0], y: [0, -20, 0] }}
           transition={{ duration: 9, repeat: Infinity, repeatType: 'reverse' }}
         />
