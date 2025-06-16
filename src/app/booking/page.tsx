@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -6,18 +7,23 @@ import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { Calendar, User, LogOut, Moon, Sun, LayoutDashboard } from 'lucide-react';
 
 export default function BookingPage() {
-  const [isDark, setIsDark] = useState(false);
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [timeSlot, setTimeSlot] = useState('');
-  const [details, setDetails] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('darkMode') === 'true' || document.documentElement.classList.contains('dark');
+    }
+    return false;
+  });
+  const [firstName, setFirstName] = useState<string>('');
+  const [lastName, setLastName] = useState<string>('');
+  const [timeSlot, setTimeSlot] = useState<string>('');
+  const [details, setDetails] = useState<string>('');
+  const [error, setError] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const emailFromUrl = searchParams.get('email') || '';
-  const [email, setEmail] = useState(emailFromUrl);
+  const [email, setEmail] = useState<string>(emailFromUrl);
 
   const { scrollYProgress } = useScroll();
   const headerOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0.9]);
@@ -30,65 +36,66 @@ export default function BookingPage() {
       router.replace(`/booking?email=${encodeURIComponent(storedEmail)}`);
     } else if (!emailFromUrl && !storedEmail) {
       setError('Please log in to book an appointment.');
-      router.push('/');
+      router.replace('/login');
     }
   }, [emailFromUrl, router]);
 
   // Handle dark mode
   useEffect(() => {
-    const savedMode = localStorage.getItem('darkMode');
-    if (savedMode === 'true') {
-      setIsDark(true);
+    if (isDark) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('darkMode', 'true');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('darkMode', 'false');
     }
-  }, []);
+  }, [isDark]);
 
   const handleToggle = () => {
-    setIsDark((prev) => {
-      const newMode = !prev;
-      localStorage.setItem('darkMode', newMode.toString());
-      document.documentElement.classList.toggle('dark', newMode);
-      return newMode;
-    });
+    setIsDark((prev) => !prev);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('userEmail');
-    router.push('/');
+    router.replace('/login');
   };
 
   const handleViewBookings = () => {
     router.push(`/bookings?email=${encodeURIComponent(email)}`);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setError('');
     setIsLoading(true);
 
+    if (!timeSlot) {
+      setError('Please select a time slot.');
+      setIsLoading(false);
+      return;
+    }
+
     try {
+      const scriptUrl = process.env.NEXT_PUBLIC_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbxOAMq6q5ir0e_j1_2Pc_2KG9r_LovObThQlaO8-LUrHij9zzmGR-mYbtzEgwnjhoNl/exec';
+      if (!scriptUrl) {
+        throw new Error('Missing NEXT_PUBLIC_SCRIPT_URL environment variable.');
+      }
+
       const formData = new URLSearchParams();
       formData.append('email', email);
       formData.append('firstName', firstName);
       formData.append('lastName', lastName);
-      formData.append('timeSlot', timeSlot); // Ensure timeSlot is sent as a string
+      formData.append('timeSlot', timeSlot);
       formData.append('details', details);
 
-      const response = await fetch(
-        process.env.NEXT_PUBLIC_SCRIPT_URL ||
-          'https://script.google.com/macros/s/AKfycbxOAMq6q5ir0e_j1_2Pc_2KG9r_LovObThQlaO8-LUrHij9zzmGR-mYbtzEgwnjhoNl/exec',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: formData.toString(),
-          mode: 'cors',
-          credentials: 'omit',
-        }
-      );
+      const response = await fetch(scriptUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData.toString(),
+        mode: 'cors',
+        credentials: 'omit',
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -102,7 +109,7 @@ export default function BookingPage() {
         setTimeSlot('');
         setDetails('');
       } else {
-        setError(data.message || 'Failed to book time slot');
+        setError(data.message || 'Failed to book time slot.');
       }
     } catch (err) {
       console.error('API error:', err);
@@ -113,7 +120,7 @@ export default function BookingPage() {
   };
 
   const timeSlots = [
-    { display: 'คาบ 0', value: '07:30-08:30' },
+    { display: 'คาบ 0', value: '07:30-08:00' },
     { display: 'คาบ 1', value: '08:30-09:30' },
     { display: 'คาบ 2', value: '09:30-10:30' },
     { display: 'คาบ 3', value: '10:30-11:30' },
@@ -126,7 +133,7 @@ export default function BookingPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-100 via-indigo-100 to-red-100 dark:from-indigo-950 dark:via-gray-900 dark:to-red-950 transition-colors duration-700">
-      {/* Header */}
+      {/* Navigation */}
       <motion.nav
         style={{ opacity: headerOpacity }}
         className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-850/95 backdrop-blur-2xl shadow-md border-b border-gray-200/50 dark:border-[rgba(99,102,241,0.5)]"
@@ -188,7 +195,7 @@ export default function BookingPage() {
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
               whileTap={{ scale: 0.95 }}
               onClick={handleLogout}
-              className="bg-gradient-to-r from-indigo-600 to-red-600 text-white text-sm font-medium py-2 px-5 rounded-full shadow-md hover:shadow-lg transition-all duration-300 flex items-center space-x-2"
+              className="bg-gradient-to-r from-indigo-600 to-red-600 dark:from-indigo-700 dark:to-red-700 text-white text-sm font-medium py-2 px-5 rounded-full shadow-md hover:shadow-lg transition-all duration-300 flex items-center space-x-2"
             >
               <LogOut className="w-4 h-4" />
               <span>Logout</span>
@@ -260,7 +267,7 @@ export default function BookingPage() {
                   whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleLogout}
-                  className="bg-gradient-to-r from-indigo-600 to-red-600 text-white text-sm font-medium py-2 px-5 rounded-full shadow-md hover:shadow-lg transition-all duration-300 flex items-center space-x-2"
+                  className="bg-gradient-to-r from-indigo-600 to-red-600 dark:from-indigo-700 dark:to-red-700 text-white text-sm font-medium py-2 px-5 rounded-full shadow-md hover:shadow-lg transition-all duration-300 flex items-center space-x-2"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Logout</span>
@@ -272,7 +279,7 @@ export default function BookingPage() {
       </motion.nav>
 
       {/* Main Content */}
-      <div className="flex-grow flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-20 pb-10">
+      <div className="flex-grow flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-20 pb-10 transition-colors duration-700">
         <motion.div
           initial={{ opacity: 0, y: 50, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -295,7 +302,7 @@ export default function BookingPage() {
               </motion.p>
             )}
           </AnimatePresence>
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="firstName" className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
@@ -369,8 +376,8 @@ export default function BookingPage() {
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
               whileTap={{ scale: 0.95 }}
-              type="submit"
-              className="w-full bg-gradient-to-r from-indigo-600 to-red-600 hover:from-indigo-700 hover:to-red-700 dark:from-indigo-500 dark:to-red-500 dark:hover:from-indigo-600 dark:hover:to-red-600 text-white font-semibold py-3 px-4 rounded-lg shadow-lg hover:shadow-[0_0_15px_rgba(99,102,241,0.5)] transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              onClick={handleSubmit}
+              className="w-full bg-gradient-to-r from-indigo-600 to-red-600 dark:from-indigo-700 dark:to-red-700 hover:from-indigo-700 hover:to-red-700 dark:hover:from-indigo-800 dark:hover:to-red-800 text-white font-semibold py-3 px-4 rounded-lg shadow-lg hover:shadow-[0_0_15px_rgba(99,102,241,0.5)] transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -388,7 +395,7 @@ export default function BookingPage() {
                 </span>
               )}
             </motion.button>
-          </form>
+          </div>
         </motion.div>
       </div>
 
