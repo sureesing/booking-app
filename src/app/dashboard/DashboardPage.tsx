@@ -213,7 +213,11 @@ export default function DashboardPage({ emailFromUrl }: DashboardPageProps) {
               <input type="checkbox" checked={isDark} onChange={handleToggle} className="sr-only peer" />
               <div className="w-20 h-10 bg-gray-200 peer-checked:bg-gradient-to-r peer-checked:from-indigo-700 peer-checked:to-red-700 rounded-full transition-all duration-500 shadow-[0_2px_8px_rgba(0,0,0,0.15)] dark:shadow-[0_2px_8px_rgba(99,102,241,0.3)] group-hover:shadow-[0_2px_12px_rgba(0,0,0,0.2)] dark:group-hover:shadow-[0_2px_12px_rgba(99,102,241,0.5)]">
                 <motion.div className="absolute left-1.5 top-1.5 w-7 h-7 bg-white dark:bg-gray-100 rounded-full shadow-lg flex items-center justify-center transform peer-checked:translate-x-10 transition-transform duration-500">
-                  <span className="text-sm">{isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}</span>
+                  {isDark ? (
+                    <Sun className="w-4 h-4 text-yellow-500" />
+                  ) : (
+                    <Moon className="w-4 h-4 text-indigo-600" />
+                  )}
                 </motion.div>
               </div>
               <span className="ml-4 text-sm font-semibold text-gray-950 dark:text-gray-100 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
@@ -237,7 +241,12 @@ export default function DashboardPage({ emailFromUrl }: DashboardPageProps) {
               className="text-gray-950 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none"
             >
               <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'} />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d={isMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'}
+                />
               </svg>
             </motion.button>
           </div>
@@ -284,11 +293,15 @@ export default function DashboardPage({ emailFromUrl }: DashboardPageProps) {
                   <Calendar className="w-4 h-4" />
                   <span>ประวัติการจอง</span>
                 </motion.button>
-                <label className="relative inline-flex items-center cursor-pointer">
+                <label className="relative inline-flex items-center cursor-pointer group">
                   <input type="checkbox" checked={isDark} onChange={handleToggle} className="sr-only peer" />
                   <div className="w-20 h-10 bg-gray-200 peer-checked:bg-gradient-to-r peer-checked:from-indigo-700 peer-checked:to-red-700 rounded-full transition-all duration-500 shadow-[0_2px_8px_rgba(0,0,0,0.15)] dark:shadow-[0_2px_8px_rgba(99,102,241,0.3)] group-hover:shadow-[0_2px_12px_rgba(0,0,0,0.2)] dark:group-hover:shadow-[0_2px_12px_rgba(99,102,241,0.5)]">
                     <motion.div className="absolute left-1.5 top-1.5 w-7 h-7 bg-white dark:bg-gray-100 rounded-full shadow-lg flex items-center justify-center transform peer-checked:translate-x-10 transition-transform duration-500">
-                      <span className="text-sm">{isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}</span>
+                      {isDark ? (
+                        <Sun className="w-4 h-4 text-yellow-500" />
+                      ) : (
+                        <Moon className="w-4 h-4 text-indigo-600" />
+                      )}
                     </motion.div>
                   </div>
                   <span className="ml-4 text-sm font-semibold text-gray-950 dark:text-gray-100 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
@@ -316,7 +329,7 @@ export default function DashboardPage({ emailFromUrl }: DashboardPageProps) {
           initial={{ opacity: 0, y: 50, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="w-full max-w-4xl p-8 sm:p-10 rounded-3xl bg-white/90 dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500"
+          className="w-full max-w-4xl p-8 sm:p-10 rounded-3xl bg-white dark:bg-gray-900/80 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500"
         >
           <h2 className="text-4xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400 mb-8 tracking-tight">
             แดชบอร์ดสถิติการจอง
@@ -349,16 +362,16 @@ export default function DashboardPage({ emailFromUrl }: DashboardPageProps) {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="p-6 rounded-lg bg-white/90 dark:bg-gray-700/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
+                  className="p-6 rounded-lg bg-white dark:bg-gray-900/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
                 >
                   <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100">จำนวนการจองทั้งหมด</h3>
                   <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{totalBookings}</p>
                 </motion.div>
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
-                  animate={{ scale: 1, x: 0 }}
+                  animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="p-6 rounded-lg bg-white/90 dark:bg-gray-700/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
+                  className="p-6 rounded-lg bg-white dark:bg-gray-900/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
                 >
                   <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100">จำนวนผู้ใช้ที่ไม่ซ้ำ</h3>
                   <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{uniqueEmails}</p>
@@ -416,14 +429,14 @@ export default function DashboardPage({ emailFromUrl }: DashboardPageProps) {
       {/* องค์ประกอบตกแต่งพื้นหลัง */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <motion.div
-          className="absolute -top-20 -left-20 w-64 h-64 bg-indigo-200/20 dark:bg-indigo-900/20 rounded-full mix-blend-multiply filter blur-xl"
+          className="absolute -top-20 -left-50 w-80 h-80 bg-red-200/20 dark:bg-red-900/20 rounded-lg mix-blend-multiply filter blur-xl"
           animate={{ scale: [1, 1.2, 1], x: [0, 15, 0], y: [0, 20, 0] }}
-          transition={{ duration: 7, repeat: Infinity, repeatType: 'reverse' }}
+          transition={{ duration: 7, repeat: 2, repeatType: 'reverse' }}
         />
         <motion.div
-          className="absolute -bottom-20 -right-20 w-80 h-80 bg-red-200/20 dark:bg-red-900/20 rounded-full mix-blend-multiply filter blur-xl"
-          animate={{ scale: [1, 1.3, 1], x: [0, -15, 0], y: [0, -20, 0] }}
-          transition={{ duration: 9, repeat: Infinity, repeatType: 'reverse' }}
+          className="absolute -bottom-20 -right-20 w-80 h-80 bg-indigo-600/20 dark:bg-indigo-900/20 rounded-lg mix-blend-multiply filter blur-xl"
+          animate={{ scale: [1, 0.8, 1], x: [0, -15, 0], y: [0, -20, 0] }}
+          transition={{ duration: 9, repeat: 2, repeatType: 'reverse' }}
         />
       </div>
     </div>

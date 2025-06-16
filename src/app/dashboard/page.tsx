@@ -1,5 +1,6 @@
+
 import { Suspense } from 'react';
-import DashboardPage, { DashboardPageProps } from './DashboardPage'; // ต้องอยู่ในโฟลเดอร์เดียวกัน
+import DashboardPage from './DashboardPage'; // ลบ { DashboardPageProps }
 
 // บังคับให้หน้าเป็นแบบไดนามิก
 export const dynamic = 'force-dynamic';
