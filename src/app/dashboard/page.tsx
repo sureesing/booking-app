@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, User, LogOut, Moon, Sun } from 'lucide-react';
+import { Calendar, User, LogOut, Moon, Sun, LayoutDashboard } from 'lucide-react';
 import { Bar, Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -16,9 +17,6 @@ import {
   Legend,
 } from 'chart.js';
 
-// Force dynamic rendering to skip prerendering
-export const dynamic = 'force-dynamic';
-
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend);
 
@@ -30,20 +28,27 @@ interface Booking {
   timeSlot: string;
 }
 
-export default function DashboardPage() {
-  const [isDark, setIsDark] = useState(false);
+interface DashboardPageProps {
+  emailFromUrl: string;
+}
+
+export default function DashboardPage({ emailFromUrl }: DashboardPageProps) {
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('darkMode') === 'true' || document.documentElement.classList.contains('dark');
+    }
+    return false;
+  });
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const emailFromUrl = searchParams?.get('email') || '';
   const [email, setEmail] = useState(emailFromUrl);
 
   // Check for stored email and validate session
   useEffect(() => {
-    const storedEmail = typeof window !== 'undefined' ? localStorage.getItem('userEmail') : null;
+    const storedEmail = localStorage.getItem('userEmail');
     if (!emailFromUrl && storedEmail) {
       setEmail(storedEmail);
       router.replace(`/dashboard?email=${encodeURIComponent(storedEmail)}`);
@@ -55,14 +60,14 @@ export default function DashboardPage() {
 
   // Handle dark mode
   useEffect(() => {
-    const savedMode = typeof window !== 'undefined' ? localStorage.getItem('darkMode') : null;
-    if (savedMode === 'true') {
-      setIsDark(true);
+    if (isDark) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('darkMode', 'true');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('darkMode', 'false');
     }
-  }, []);
+  }, [isDark]);
 
   // Fetch bookings
   useEffect(() => {
@@ -78,7 +83,7 @@ export default function DashboardPage() {
           method: 'GET',
           mode: 'cors',
           credentials: 'omit',
-          cache: 'no-store', // Prevent caching during build
+          cache: 'no-store',
         });
 
         if (!response.ok) {
@@ -109,20 +114,11 @@ export default function DashboardPage() {
   }, [email]);
 
   const handleToggle = () => {
-    setIsDark((prev) => {
-      const newMode = !prev;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('darkMode', newMode.toString());
-      }
-      document.documentElement.classList.toggle('dark', newMode);
-      return newMode;
-    });
+    setIsDark((prev) => !prev);
   };
 
   const handleLogout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('userEmail');
-    }
+    localStorage.removeItem('userEmail');
     router.push('/');
   };
 
@@ -150,7 +146,7 @@ export default function DashboardPage() {
 
   // Daily bookings (mocked)
   const dailyBookings = bookings.reduce((acc: Record<string, number>) => {
-    const date = '16/6/2025'; // แก้เป็น date parsing จริงถ้ามีข้อมูล
+    const date = '16/6/2025'; // Replace with real date parsing if available
     acc[date] = (acc[date] || 0) + 1;
     return acc;
   }, {});
@@ -188,6 +184,16 @@ export default function DashboardPage() {
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => router.push(`/dashboard?email=${encodeURIComponent(email)}`)}
+              className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full bg-indigo-100 dark:bg-indigo-900/50 cursor-default flex items-center space-x-2"
+              disabled
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span>Dashboard</span>
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => router.push(`/booking?email=${encodeURIComponent(email)}`)}
               className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
             >
@@ -218,7 +224,7 @@ export default function DashboardPage() {
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
               whileTap={{ scale: 0.95 }}
               onClick={handleLogout}
-              className="bg-gradient-to-r from-indigo-600 to-red-600 text-white text-sm font-medium py-2 px-5 rounded-full shadow-md hover:shadow-lg transition-all duration-300 flex items-center space-x-2"
+              className="bg-gradient-to-r from-indigo-600 to-red-600 dark:from-indigo-700 dark:to-red-700 text-white text-sm font-medium py-2 px-5 rounded-full shadow-md hover:shadow-lg transition-all duration-300 flex items-center space-x-2"
             >
               <LogOut className="w-4 h-4" />
               <span>Logout</span>
@@ -253,6 +259,16 @@ export default function DashboardPage() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
+                  onClick={() => router.push(`/dashboard?email=${encodeURIComponent(email)}`)}
+                  className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full bg-indigo-100 dark:bg-indigo-900/50 cursor-default flex items-center space-x-2"
+                  disabled
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span>Dashboard</span>
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => router.push(`/booking?email=${encodeURIComponent(email)}`)}
                   className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
                 >
@@ -283,7 +299,7 @@ export default function DashboardPage() {
                   whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleLogout}
-                  className="bg-gradient-to-r from-indigo-600 to-red-600 text-white text-sm font-medium py-2 px-5 rounded-full shadow-md hover:shadow-lg transition-all duration-300 flex items-center space-x-2"
+                  className="bg-gradient-to-r from-indigo-600 to-red-600 dark:from-indigo-700 dark:to-red-700 text-white text-sm font-medium py-2 px-5 rounded-full shadow-md hover:shadow-lg transition-all duration-300 flex items-center space-x-2"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Logout</span>
