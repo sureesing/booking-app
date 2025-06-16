@@ -356,7 +356,7 @@ export default function DashboardPage({ emailFromUrl }: DashboardPageProps) {
                 </motion.div>
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
+                  animate={{ scale: 1, x: 0 }}
                   transition={{ duration: 0.5 }}
                   className="p-6 rounded-lg bg-white/90 dark:bg-gray-700/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
                 >
@@ -371,7 +371,7 @@ export default function DashboardPage({ emailFromUrl }: DashboardPageProps) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="p-6 rounded-lg bg-white/90 dark:bg-gray-700/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
+                  className="p-6 rounded-lg bg-white dark:bg-gray-900/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
                 >
                   <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100 mb-4">การจองตามช่วงเวลา</h3>
                   <Bar
@@ -393,7 +393,7 @@ export default function DashboardPage({ emailFromUrl }: DashboardPageProps) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="p-6 rounded-lg bg-white/90 dark:bg-gray-700/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
+                  className="p-6 rounded-lg bg-white dark:bg-gray-900/80 border border-gray-300 dark:border-indigo-600 shadow-sm hover:shadow-md transition-all duration-300"
                 >
                   <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100 mb-4">การจองตามวัน</h3>
                   <Pie
@@ -416,12 +416,12 @@ export default function DashboardPage({ emailFromUrl }: DashboardPageProps) {
       {/* องค์ประกอบตกแต่งพื้นหลัง */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <motion.div
-          className="absolute -top-20 -left-20 w-64 h-64 bg-indigo-200/20 dark:bg-indigo-600/20 rounded-full mix-blend-multiply filter blur-3xl"
+          className="absolute -top-20 -left-20 w-64 h-64 bg-indigo-200/20 dark:bg-indigo-900/20 rounded-full mix-blend-multiply filter blur-xl"
           animate={{ scale: [1, 1.2, 1], x: [0, 15, 0], y: [0, 20, 0] }}
           transition={{ duration: 7, repeat: Infinity, repeatType: 'reverse' }}
         />
         <motion.div
-          className="absolute -bottom-20 -right-20 w-80 h-80 bg-red-200/20 dark:bg-red-600/20 rounded-full mix-blend-multiply filter blur-3xl"
+          className="absolute -bottom-20 -right-20 w-80 h-80 bg-red-200/20 dark:bg-red-900/20 rounded-full mix-blend-multiply filter blur-xl"
           animate={{ scale: [1, 1.3, 1], x: [0, -15, 0], y: [0, -20, 0] }}
           transition={{ duration: 9, repeat: Infinity, repeatType: 'reverse' }}
         />
