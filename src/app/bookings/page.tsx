@@ -5,6 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { Calendar, User, LogOut, Moon, Sun, LayoutDashboard } from 'lucide-react';
 
+// Force dynamic rendering to avoid prerendering issues
+export const dynamic = 'force-dynamic';
+
 // Define Booking interface
 interface Booking {
   email: string;
@@ -22,16 +25,15 @@ export default function BookingsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const emailFromUrl = searchParams.get('email') || '';
-  const [email, setEmail] = useState(emailFromUrl);
 
   const { scrollYProgress } = useScroll();
   const headerOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0.9]);
 
   // Check for stored email and validate session
   useEffect(() => {
+    if (typeof window === 'undefined') return; // Skip during prerendering
     const storedEmail = localStorage.getItem('userEmail');
     if (!emailFromUrl && storedEmail) {
-      setEmail(storedEmail);
       router.replace(`/bookings?email=${encodeURIComponent(storedEmail)}`);
     } else if (!emailFromUrl && !storedEmail) {
       setError('Please log in to access your bookings.');
@@ -41,6 +43,7 @@ export default function BookingsPage() {
 
   // Handle dark mode
   useEffect(() => {
+    if (typeof window === 'undefined') return; // Skip during prerendering
     const savedMode = localStorage.getItem('darkMode');
     if (savedMode === 'true') {
       setIsDark(true);
@@ -56,6 +59,12 @@ export default function BookingsPage() {
       setIsLoading(true);
       setError('');
       try {
+        // Skip API call during prerendering
+        if (typeof window === 'undefined') {
+          setBookings([]);
+          setIsLoading(false);
+          return;
+        }
         const url = `${
           process.env.NEXT_PUBLIC_SCRIPT_URL ||
           'https://script.google.com/macros/s/AKfycbxOAMq6q5ir0e_j1_2Pc_2KG9r_LovObThQlaO8-LUrHij9zzmGR-mYbtzEgwnjhoNl/exec'
@@ -84,27 +93,31 @@ export default function BookingsPage() {
       }
     };
 
-    if (email) {
+    if (emailFromUrl) {
       fetchBookings();
     }
-  }, [email]);
+  }, [emailFromUrl]);
 
   const handleToggle = () => {
     setIsDark((prev) => {
       const newMode = !prev;
-      localStorage.setItem('darkMode', newMode.toString());
-      document.documentElement.classList.toggle('dark', newMode);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('darkMode', newMode.toString());
+        document.documentElement.classList.toggle('dark', newMode);
+      }
       return newMode;
     });
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('userEmail');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('userEmail');
+    }
     router.push('/');
   };
 
   const filteredBookings = bookings.filter((booking) =>
-    booking.email.toLowerCase() === email.toLowerCase()
+    booking.email.toLowerCase() === emailFromUrl.toLowerCase()
   );
 
   return (
@@ -129,12 +142,12 @@ export default function BookingsPage() {
           <div className="hidden md:flex items-center space-x-6">
             <div className="flex items-center space-x-2 text-gray-950 dark:text-gray-100">
               <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-              <span className="text-sm font-medium">{email}</span>
+              <span className="text-sm font-medium">{emailFromUrl}</span>
             </div>
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => router.push(`/dashboard?email=${encodeURIComponent(email)}`)}
+              onClick={() => router.push(`/dashboard?email=${encodeURIComponent(emailFromUrl)}`)}
               className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
             >
               <LayoutDashboard className="w-4 h-4" />
@@ -143,7 +156,7 @@ export default function BookingsPage() {
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => router.push(`/booking?email=${encodeURIComponent(email)}`)}
+              onClick={() => router.push(`/booking?email=${encodeURIComponent(emailFromUrl)}`)}
               className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
             >
               <Calendar className="w-4 h-4" />
@@ -201,12 +214,12 @@ export default function BookingsPage() {
               <div className="px-4 py-4 flex flex-col space-y-4">
                 <div className="flex items-center space-x-2 text-gray-950 dark:text-gray-100">
                   <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                  <span className="text-sm font-medium">{email}</span>
+                  <span className="text-sm font-medium">{emailFromUrl}</span>
                 </div>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => router.push(`/dashboard?email=${encodeURIComponent(email)}`)}
+                  onClick={() => router.push(`/dashboard?email=${encodeURIComponent(emailFromUrl)}`)}
                   className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
                 >
                   <LayoutDashboard className="w-4 h-4" />
@@ -215,7 +228,7 @@ export default function BookingsPage() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => router.push(`/booking?email=${encodeURIComponent(email)}`)}
+                  onClick={() => router.push(`/booking?email=${encodeURIComponent(emailFromUrl)}`)}
                   className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
                 >
                   <Calendar className="w-4 h-4" />
