@@ -73,12 +73,12 @@ export default function BookingsClient() {
         console.log('API response:', data);
         if (data.success) {
           // Map server response to match Booking interface
-          const mappedBookings = Array.isArray(data.bookings) ? data.bookings.map((booking: any) => ({
-            firstName: booking.firstName || '',
-            lastName: booking.lastName || '',
-            timeSlot: booking.period || booking.timeSlot || '',
-            symptoms: booking.symptoms || '',
-            treatment: booking.treatment || '',
+          const mappedBookings = Array.isArray(data.bookings) ? data.bookings.map((booking: Record<string, unknown>) => ({
+            firstName: booking.firstName as string || '',
+            lastName: booking.lastName as string || '',
+            timeSlot: booking.period as string || booking.timeSlot as string || '',
+            symptoms: booking.symptoms as string || '',
+            treatment: booking.treatment as string || '',
           })) : [];
           setBookings(mappedBookings);
         } else {

@@ -159,8 +159,8 @@ export default function BookingClient() {
         setError(data.message || 'ไม่สามารถบันทึกได้ กรุณาลองอีกครั้ง');
         setHasSubmitted(false);
       }
-    } catch (err: any) {
-      setError('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้: ' + err.message);
+    } catch (err: unknown) {
+      setError('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้: ' + (err instanceof Error ? err.message : String(err)));
       setHasSubmitted(false);
     } finally {
       setIsLoading(false);

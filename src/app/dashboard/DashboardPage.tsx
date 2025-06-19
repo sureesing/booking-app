@@ -4,7 +4,7 @@ import React from 'react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Moon, Sun, LayoutDashboard } from 'lucide-react';
+import { Calendar, Moon, Sun } from 'lucide-react';
 import { Pie, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
 
@@ -96,24 +96,24 @@ export default function DashboardPage() {
         if (data.success && Array.isArray(data.bookings)) {
           console.log('Raw bookings:', data.bookings);
           const mappedBookings = data.bookings
-            .map((booking: any, index: number) => {
+            .map((booking: Record<string, unknown>, index: number) => {
               let formattedDate = '';
               if (booking.date) {
                 try {
                   let parsedDate: Date;
                   // Handle YYYY-MM-DD format
-                  if (/^\d{4}-\d{2}-\d{2}$/.test(booking.date)) {
-                    const [year, month, day] = booking.date.split('-').map(Number);
+                  if (/^\d{4}-\d{2}-\d{2}$/.test(booking.date as string)) {
+                    const [year, month, day] = (booking.date as string).split('-').map(Number);
                     parsedDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
                   }
                   // Handle DD/MM/YYYY format
-                  else if (/^\d{2}\/\d{2}\/\d{4}$/.test(booking.date)) {
-                    const [day, month, year] = booking.date.split('/').map(Number);
+                  else if (/^\d{2}\/\d{2}\/\d{4}$/.test(booking.date as string)) {
+                    const [day, month, year] = (booking.date as string).split('/').map(Number);
                     parsedDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
                   }
                   // Handle other date formats
                   else {
-                    parsedDate = new Date(booking.date);
+                    parsedDate = new Date(booking.date as string);
                   }
                   if (!isNaN(parsedDate.getTime())) {
                     formattedDate = parsedDate.toLocaleDateString('th-TH', {
@@ -136,12 +136,12 @@ export default function DashboardPage() {
               }
               console.log(`Index ${index}: Raw date: ${booking.date}, Formatted date: ${formattedDate}, TimeSlot: ${booking.period || booking.timeSlot}, Symptoms: ${booking.symptome || booking.symptoms}`);
               return {
-                firstName: booking.firstName || '',
-                lastName: booking.lastName || '',
-                timeSlot: booking.period || booking.timeSlot || '',
+                firstName: booking.firstName as string || '',
+                lastName: booking.lastName as string || '',
+                timeSlot: booking.period as string || booking.timeSlot as string || '',
                 date: formattedDate,
-                symptoms: booking.symptome || booking.symptoms || 'ไม่ระบุ',
-                treatment: booking.treatment || 'ไม่มี',
+                symptoms: booking.symptome as string || booking.symptoms as string || 'ไม่ระบุ',
+                treatment: booking.treatment as string || 'ไม่มี',
               };
             })
             .filter((booking: Booking) => booking.date !== ''); // Only include bookings with valid dates
