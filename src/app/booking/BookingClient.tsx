@@ -328,7 +328,8 @@ export default function BookingClient() {
           initial={{ opacity: 0, y: 50, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="w-full max-w-2xl p-8 sm:p-10 rounded-3xl bg-white/90 dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500"
+          className="w-full max-w-2xl p-8 sm:p-10 rounded-3xl bg-white dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500"
+          style={{ backgroundColor: 'white' }}
         >
           <h2 className="text-4xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400 mb-4 tracking-tight">
             โรงเรียนสิงห์บุรี
@@ -362,7 +363,7 @@ export default function BookingClient() {
                 whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
                 type="date"
                 id="date"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/90 dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 min={minDate}
@@ -378,16 +379,25 @@ export default function BookingClient() {
                 {timeSlots.map((slot) => (
                   <motion.div
                     key={slot.value}
-                    whileHover={{ scale: 1.1, boxShadow: '0 0 10px rgba(99,102,241,0.3)' }}
-                    whileTap={{ scale: 0.95 }}
-                    className={`flex items-center justify-center w-16 h-16 rounded-full border-2 cursor-pointer transition-all duration-300 ${
-                      period === slot.value
-                        ? 'bg-gradient-to-r from-indigo-600 to-red-600 text-white border-indigo-600 dark:border-indigo-500 shadow-lg'
-                        : 'bg-white/90 dark:bg-gray-700/80 border-gray-300 dark:border-indigo-600 text-gray-950 dark:text-gray-100 hover:bg-indigo-100 dark:hover:bg-indigo-900/50'
-                    }`}
+                    whileHover={{
+                      scale: 1.12,
+                      boxShadow: '0 0 18px rgba(99,102,241,0.18)',
+                      borderColor: '#6366f1',
+                      backgroundColor: '#e0e7ff',
+                    }}
+                    whileTap={{ scale: 0.97 }}
+                    className={`flex flex-col items-center justify-center w-20 h-20 rounded-2xl border-2 cursor-pointer transition-all duration-300 select-none
+                      ${period === slot.value
+                        ? 'bg-gradient-to-r from-indigo-600 to-red-600 text-white border-indigo-600 dark:border-indigo-500 shadow-xl'
+                        : 'bg-white dark:bg-gray-700/80 border-gray-300 dark:border-indigo-600 text-gray-950 dark:text-gray-100 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-lg'}
+                    `}
                     onClick={() => setPeriod(slot.value)}
+                    style={{ minWidth: '80px', minHeight: '80px' }}
                   >
-                    <span className="text-sm font-medium">{slot.display}</span>
+                    <span className="text-base font-bold leading-tight">
+                      {slot.display}
+                    </span>
+                    <span className={`text-xs mt-1 ${period === slot.value ? 'text-white/90' : 'text-gray-500 dark:text-gray-300'}`}>{slot.value}</span>
                   </motion.div>
                 ))}
               </div>
@@ -402,7 +412,7 @@ export default function BookingClient() {
                   whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
                   type="text"
                   id="studentId"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/90 dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
                   value={studentId}
                   onChange={(e) => setStudentId(e.target.value)}
                   required
@@ -412,40 +422,50 @@ export default function BookingClient() {
                 <label htmlFor="grade" className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
                   ชั้น
                 </label>
-                <motion.select
-                  whileHover={{ scale: 1.02 }}
-                  whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
-                  id="grade"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/90 dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
-                  value={grade}
-                  onChange={(e) => setGrade(e.target.value)}
-                  required
-                >
-                  <option value="">เลือกชั้น</option>
-                  {gradeOptions.map((g) => (
-                    <option key={g} value={g}>{`ม.${g}`}</option>
-                  ))}
-                </motion.select>
+                <div className="relative">
+                  <motion.select
+                    whileHover={{ scale: 1.02 }}
+                    whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
+                    id="grade"
+                    className="w-full px-4 py-3 pr-10 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 appearance-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
+                    value={grade}
+                    onChange={(e) => setGrade(e.target.value)}
+                    required
+                  >
+                    <option value="">เลือกชั้น</option>
+                    {gradeOptions.map((g) => (
+                      <option key={g} value={g}>{`ม.${g}`}</option>
+                    ))}
+                  </motion.select>
+                  <span className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-300">
+                    ▼
+                  </span>
+                </div>
               </div>
             </div>
             <div>
               <label htmlFor="prefix" className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
                 คำนำหน้า
               </label>
-              <motion.select
-                whileHover={{ scale: 1.02 }}
-                whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
-                id="prefix"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/90 dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
-                value={prefix}
-                onChange={(e) => setPrefix(e.target.value)}
-                required
-              >
-                <option value="">เลือกคำนำหน้า</option>
-                {prefixes.map((p) => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </motion.select>
+              <div className="relative">
+                <motion.select
+                  whileHover={{ scale: 1.02 }}
+                  whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
+                  id="prefix"
+                  className="w-full px-4 py-3 pr-10 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 appearance-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
+                  value={prefix}
+                  onChange={(e) => setPrefix(e.target.value)}
+                  required
+                >
+                  <option value="">เลือกคำนำหน้า</option>
+                  {prefixes.map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </motion.select>
+                <span className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-300">
+                  ▼
+                </span>
+              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
@@ -457,7 +477,7 @@ export default function BookingClient() {
                   whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
                   type="text"
                   id="firstName"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/90 dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   required
@@ -472,7 +492,7 @@ export default function BookingClient() {
                   whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
                   type="text"
                   id="lastName"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/90 dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   required
@@ -483,20 +503,25 @@ export default function BookingClient() {
               <label htmlFor="symptomCategory" className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
                 อาการ
               </label>
-              <motion.select
-                whileHover={{ scale: 1.02 }}
-                whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
-                id="symptomCategory"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/90 dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
-                value={symptomCategory}
-                onChange={(e) => setSymptomCategory(e.target.value)}
-                required
-              >
-                <option value="">เลือกอาการ</option>
-                {symptomCategories.map((category) => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
-              </motion.select>
+              <div className="relative">
+                <motion.select
+                  whileHover={{ scale: 1.02 }}
+                  whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
+                  id="symptomCategory"
+                  className="w-full px-4 py-3 pr-10 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 appearance-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
+                  value={symptomCategory}
+                  onChange={(e) => setSymptomCategory(e.target.value)}
+                  required
+                >
+                  <option value="">เลือกอาการ</option>
+                  {symptomCategories.map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </motion.select>
+                <span className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-300">
+                  ▼
+                </span>
+              </div>
             </div>
             {symptomCategory === 'อื่นๆ' && (
               <div>
@@ -507,7 +532,7 @@ export default function BookingClient() {
                   whileHover={{ scale: 1.02 }}
                   whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
                   id="customSymptoms"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/90 dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
                   value={customSymptoms}
                   onChange={(e) => setCustomSymptoms(e.target.value)}
                   rows={4}
@@ -526,7 +551,7 @@ export default function BookingClient() {
                 type="file"
                 id="image"
                 accept="image/jpeg,image/png"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/90 dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
                 onChange={handleImageChange}
               />
               {imagePreview && (
@@ -549,7 +574,7 @@ export default function BookingClient() {
                 whileHover={{ scale: 1.02 }}
                 whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
                 id="treatment"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/90 dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
                 value={treatment}
                 onChange={(e) => setTreatment(e.target.value)}
                 rows={4}

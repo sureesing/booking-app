@@ -25,6 +25,32 @@ interface TimeSlot {
   value: string;
 }
 
+// กำหนดสีสำหรับ light/dark mode
+const pieColorsLight = [
+  'rgba(99, 102, 241, 0.8)', // indigo
+  'rgba(236, 72, 153, 0.8)', // pink
+  'rgba(34, 197, 94, 0.8)', // green
+  'rgba(249, 115, 22, 0.8)', // orange
+  'rgba(168, 85, 247, 0.8)', // purple
+  'rgba(239, 68, 68, 0.8)', // red
+  'rgba(59, 130, 246, 0.8)', // blue
+  'rgba(147, 51, 234, 0.8)', // violet
+  'rgba(251, 191, 36, 0.8)', // yellow
+];
+const pieColorsDark = [
+  'rgba(165,180,252,0.7)', // indigo-200
+  'rgba(253,186,116,0.7)', // orange-200
+  'rgba(134,239,172,0.7)', // green-200
+  'rgba(251,207,232,0.7)', // pink-200
+  'rgba(192,132,252,0.7)', // purple-300
+  'rgba(254,202,202,0.7)', // red-200
+  'rgba(191,219,254,0.7)', // blue-200
+  'rgba(221,214,254,0.7)', // violet-200
+  'rgba(254,240,138,0.7)', // yellow-200
+];
+const pieBorderLight = pieColorsLight.map(c => c.replace('0.8', '1'));
+const pieBorderDark = pieColorsDark.map(c => c.replace('0.7', '1'));
+
 export default function DashboardPage() {
   const [isDark, setIsDark] = useState<boolean>(false);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -171,28 +197,8 @@ export default function DashboardPage() {
       {
         label: 'การจองตามช่วงเวลา',
         data: Object.values(timeSlotCounts),
-        backgroundColor: [
-          'rgba(99, 102, 241, 0.6)',
-          'rgba(236, 72, 153, 0.6)',
-          'rgba(34, 197, 94, 0.6)',
-          'rgba(249, 115, 22, 0.6)',
-          'rgba(168, 85, 247, 0.6)',
-          'rgba(239, 68, 68, 0.6)',
-          'rgba(59, 130, 246, 0.6)',
-          'rgba(147, 51, 234, 0.6)',
-          'rgba(251, 191, 36, 0.6)',
-        ],
-        borderColor: [
-          'rgba(99, 102, 241, 1)',
-          'rgba(236, 72, 153, 1)',
-          'rgba(34, 197, 94, 1)',
-          'rgba(249, 115, 22, 1)',
-          'rgba(168, 85, 247, 1)',
-          'rgba(239, 68, 68, 1)',
-          'rgba(59, 130, 246, 1)',
-          'rgba(147, 51, 234, 1)',
-          'rgba(251, 191, 36, 1)',
-        ],
+        backgroundColor: isDark ? pieColorsDark : pieColorsLight,
+        borderColor: isDark ? pieBorderDark : pieBorderLight,
         borderWidth: 1,
       },
     ],
@@ -230,22 +236,8 @@ export default function DashboardPage() {
       {
         label: 'การจองตามอาการ',
         data: symptomCategories.map((category) => symptomCounts[category] || 0),
-        backgroundColor: [
-          'rgba(59, 130, 246, 0.6)',
-          'rgba(236, 72, 153, 0.6)',
-          'rgba(34, 197, 94, 0.6)',
-          'rgba(249, 115, 22, 0.6)',
-          'rgba(168, 85, 247, 0.6)',
-          'rgba(239, 68, 68, 0.6)',
-        ],
-        borderColor: [
-          'rgba(59, 130, 246, 1)',
-          'rgba(236, 72, 153, 1)',
-          'rgba(34, 197, 94, 1)',
-          'rgba(249, 115, 22, 1)',
-          'rgba(168, 85, 247, 1)',
-          'rgba(239, 68, 68, 1)',
-        ],
+        backgroundColor: isDark ? pieColorsDark : pieColorsLight,
+        borderColor: isDark ? pieBorderDark : pieBorderLight,
         borderWidth: 1,
       },
     ],
@@ -291,8 +283,12 @@ export default function DashboardPage() {
   // Calculate max value for y-axis
   const maxBookingCount = Math.max(...Object.values(dailyCounts), 0);
   const yAxisMax = Math.ceil(maxBookingCount * 1.1); // Add 10% buffer
-  const stepSize = yAxisMax <= 50 ? 10 : yAxisMax <= 200 ? 50 : 100; // Dynamic step size
-  console.log('Max Booking Count:', maxBookingCount, 'Y-Axis Max:', yAxisMax, 'Step Size:', stepSize);
+  let barStepSize = 10;
+  if (yAxisMax <= 10) barStepSize = 1;
+  else if (yAxisMax <= 50) barStepSize = 5;
+  else if (yAxisMax <= 100) barStepSize = 10;
+  else barStepSize = 20;
+  console.log('Max Booking Count:', maxBookingCount, 'Y-Axis Max:', yAxisMax, 'Step Size:', barStepSize);
 
   const dailyData = {
     labels: dateRange,
@@ -300,9 +296,9 @@ export default function DashboardPage() {
       {
         label: 'การจองตามวัน',
         data: dateRange.map((date) => dailyCounts[date] || 0),
-        backgroundColor: 'rgba(99, 102, 241, 0.6)',
-        borderColor: 'rgba(99, 102, 241, 1)',
-        borderWidth: 1,
+        backgroundColor: isDark ? 'rgba(165,180,252,0.7)' : 'rgba(99, 102, 241, 0.8)',
+        borderColor: isDark ? 'rgba(165,180,252,1)' : 'rgba(99, 102, 241, 1)',
+        borderWidth: 2,
       },
     ],
   };
@@ -323,16 +319,6 @@ export default function DashboardPage() {
             </span>
           </div>
           <div className="hidden md:flex items-center space-x-6">
-            <motion.button
-              whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => router.push('/dashboard')}
-              className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full bg-indigo-100 dark:bg-indigo-900/50 cursor-default flex items-center space-x-2"
-              disabled
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              <span>แดชบอร์ด</span>
-            </motion.button>
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
               whileTap={{ scale: 0.95 }}
@@ -393,16 +379,6 @@ export default function DashboardPage() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => router.push('/dashboard')}
-                  className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full bg-indigo-100 dark:bg-indigo-900/50 cursor-default flex items-center space-x-2"
-                  disabled
-                >
-                  <LayoutDashboard className="w-4 h-4" />
-                  <span>แดชบอร์ด</span>
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
                   onClick={() => router.push('/booking')}
                   className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
                 >
@@ -441,7 +417,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 50, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="w-full max-w-5xl p-6 sm:p-8 rounded-3xl bg-white/90 dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)]"
+          className="w-full max-w-5xl p-6 sm:p-8 rounded-3xl bg-white dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)]"
         >
           <h2 className="text-3xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400 mb-6 tracking-tight">
             แดชบอร์ด iMedReserve
@@ -477,13 +453,14 @@ export default function DashboardPage() {
           ) : bookings.length === 0 ? (
             <p className="text-center text-gray-600 dark:text-gray-400">ไม่พบข้อมูลการจอง</p>
           ) : (
-            <div className="space-y-8">
+            <div className="space-y-10">
               {/* Summary Card */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="p-6 rounded-lg bg-white/95 dark:bg-gray-800/80 border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] shadow-sm hover:shadow-md transition-all duration-300 text-center"
+                className="p-8 rounded-2xl bg-white border border-gray-200/70 shadow-lg hover:shadow-2xl transition-all duration-300 text-center"
+                whileHover={{ scale: 1.025, boxShadow: '0 8px 32px 0 rgba(99,102,241,0.12)' }}
               >
                 <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100 mb-2">จำนวนการจองทั้งหมด</h3>
                 <p className="text-4xl font-bold text-indigo-600 dark:text-indigo-400">{totalBookings}</p>
@@ -498,13 +475,14 @@ export default function DashboardPage() {
               </motion.div>
 
               {/* Charts */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Pie Chart: Time Slots */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
-                  className="p-6 rounded-lg bg-white/95 dark:bg-gray-800/80 border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] shadow-sm hover:shadow-md transition-all duration-300"
+                  className="p-8 rounded-2xl bg-white border border-gray-200/70 shadow-lg hover:shadow-2xl transition-all duration-300"
+                  whileHover={{ scale: 1.02, boxShadow: '0 8px 32px 0 rgba(99,102,241,0.10)' }}
                 >
                   <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100 mb-4 text-center">
                     การจองตามช่วงเวลา
@@ -518,14 +496,14 @@ export default function DashboardPage() {
                           legend: {
                             position: 'bottom',
                             labels: {
-                              color: isDark ? '#F3F4F6' : '#1F2937',
+                              color: isDark ? '#fff' : '#1F2937',
                               font: { size: 14 },
                               padding: 20,
                             },
                           },
                           tooltip: {
-                            backgroundColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)',
-                            bodyColor: isDark ? '#F3F4F6' : '#1F2937',
+                            backgroundColor: isDark ? 'rgba(30,41,59,0.95)' : 'rgba(255,255,255,0.95)',
+                            bodyColor: isDark ? '#fff' : '#1F2937',
                             callbacks: {
                               label: (context) => `${context.label}: ${context.raw} การจอง`,
                             },
@@ -541,7 +519,8 @@ export default function DashboardPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.4 }}
-                  className="p-6 rounded-lg bg-white/95 dark:bg-gray-800/80 border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] shadow-sm hover:shadow-md transition-all duration-300"
+                  className="p-8 rounded-2xl bg-white border border-gray-200/70 shadow-lg hover:shadow-2xl transition-all duration-300"
+                  whileHover={{ scale: 1.02, boxShadow: '0 8px 32px 0 rgba(99,102,241,0.10)' }}
                 >
                   <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100 mb-4 text-center">
                     การจองตามอาการ
@@ -555,14 +534,14 @@ export default function DashboardPage() {
                           legend: {
                             position: 'bottom',
                             labels: {
-                              color: isDark ? '#F3F4F6' : '#1F2937',
+                              color: isDark ? '#fff' : '#1F2937',
                               font: { size: 14 },
                               padding: 20,
                             },
                           },
                           tooltip: {
-                            backgroundColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)',
-                            bodyColor: isDark ? '#F3F4F6' : '#1F2937',
+                            backgroundColor: isDark ? 'rgba(30,41,59,0.95)' : 'rgba(255,255,255,0.95)',
+                            bodyColor: isDark ? '#fff' : '#1F2937',
                             callbacks: {
                               label: (context) => `${context.label}: ${context.raw} การจอง`,
                             },
@@ -578,7 +557,8 @@ export default function DashboardPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.6 }}
-                  className="p-6 rounded-lg bg-white/95 dark:bg-gray-800/80 border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] shadow-sm hover:shadow-md transition-all duration-300 lg:col-span-2"
+                  className="p-8 rounded-2xl bg-white border border-gray-200/70 shadow-lg hover:shadow-2xl transition-all duration-300 lg:col-span-2"
+                  whileHover={{ scale: 1.015, boxShadow: '0 8px 32px 0 rgba(99,102,241,0.10)' }}
                 >
                   <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100 mb-4 text-center">
                     การจองตามวันที่ (7 วันล่าสุด)
@@ -592,13 +572,13 @@ export default function DashboardPage() {
                           legend: {
                             position: 'top',
                             labels: {
-                              color: isDark ? '#F3F4F6' : '#1F2937',
+                              color: isDark ? '#fff' : '#1F2937',
                               font: { size: 14 },
                             },
                           },
                           tooltip: {
-                            backgroundColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)',
-                            bodyColor: isDark ? '#F3F4F6' : '#1F2937',
+                            backgroundColor: isDark ? 'rgba(30,41,59,0.95)' : 'rgba(255,255,255,0.95)',
+                            bodyColor: isDark ? '#fff' : '#1F2937',
                             callbacks: {
                               label: (context) => `${context.raw} การจอง`,
                             },
@@ -607,18 +587,24 @@ export default function DashboardPage() {
                         scales: {
                           x: {
                             ticks: {
-                              color: isDark ? '#F3F4F6' : '#1F2937',
+                              color: isDark ? '#fff' : '#1F2937',
                               font: { size: 12 },
+                            },
+                            grid: {
+                              color: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(30,41,59,0.08)',
                             },
                           },
                           y: {
                             ticks: {
-                              color: isDark ? '#F3F4F6' : '#1F2937',
+                              color: isDark ? '#fff' : '#1F2937',
                               font: { size: 12 },
-                              stepSize: stepSize, // Dynamic step size
+                              stepSize: barStepSize,
+                            },
+                            grid: {
+                              color: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(30,41,59,0.08)',
                             },
                             beginAtZero: true,
-                            max: yAxisMax, // Dynamic max based on data
+                            max: yAxisMax,
                           },
                         },
                       }}

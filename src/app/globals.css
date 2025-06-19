@@ -59,7 +59,15 @@ body {
   }
 
   .input-field {
-    @apply w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm;
+    @apply w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm;
+  }
+
+  .select-field {
+    @apply w-full px-4 py-3 pr-10 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 appearance-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm;
+  }
+
+  .textarea-field {
+    @apply w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm;
   }
 }
 
@@ -133,4 +141,75 @@ img[src*="vercel.svg"],
 
 .gradient-button {
   @apply bg-gradient-to-r from-indigo-600 to-purple-600 bg-[length:200%_100%] animate-[gradient-flow_3s_ease_infinite];
+}
+
+/* Force bg-white for input/select/textarea in light mode for clarity */
+html:not(.dark) input,
+html:not(.dark) select,
+html:not(.dark) textarea {
+  background-color: #fff !important;
+  color: #111827 !important;
+  border-color: #c7d2fe !important; /* indigo-200 */
+}
+html:not(.dark) input:focus,
+html:not(.dark) select:focus,
+html:not(.dark) textarea:focus {
+  border-color: #6366f1 !important; /* indigo-500 */
+  box-shadow: 0 0 0 2px #c7d2fe33;
+}
+
+@keyframes shooting-star {
+  0% { opacity: 0; transform: translateX(-40px); }
+  10% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(120px); }
+}
+@keyframes shooting-star2 {
+  0% { opacity: 0; transform: translateX(40px); }
+  10% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(-90px); }
+}
+@keyframes planet-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes planet-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-18px); }
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 0.2; }
+}
+.animate-shooting-star { animation: shooting-star 3.5s linear infinite; }
+.animate-shooting-star2 { animation: shooting-star2 4.2s linear infinite; }
+.animate-planet-spin { animation: planet-spin 12s linear infinite; }
+.animate-planet-bounce { animation: planet-bounce 2.5s infinite cubic-bezier(.68,-0.55,.27,1.55); }
+.animate-twinkle { animation: twinkle 2.5s infinite alternate; }
+
+@keyframes shooting-star3 {
+  0% { opacity: 0; transform: translateX(30px); }
+  10% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(-60px); }
+}
+@keyframes comet {
+  0% { opacity: 0; transform: translateX(-20px) translateY(0); }
+  10% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(60px) translateY(-20px); }
+}
+@keyframes meteor {
+  0% { opacity: 0; transform: translateY(0); }
+  10% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(30px); }
+}
+.animate-shooting-star3 { animation: shooting-star3 3.2s linear infinite; }
+.animate-comet { animation: comet 4.5s linear infinite; }
+.animate-meteor { animation: meteor 3.8s linear infinite; }
+
+footer *, footer .footer-text, footer [class*=footer-text] {
+  color: #fff !important;
 }
