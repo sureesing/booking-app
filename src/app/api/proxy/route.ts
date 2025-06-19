@@ -113,10 +113,18 @@ export async function POST(req: NextRequest) {
 
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
-  } catch (error: any) {
-    console.error('Proxy error:', error.message, error.stack);
+  } catch (error: unknown) {
+    let message = 'Unknown error';
+    let stack = undefined;
+    if (error instanceof Error) {
+      message = error.message;
+      stack = error.stack;
+    } else if (typeof error === 'string') {
+      message = error;
+    }
+    console.error('Proxy error:', message, stack);
     return NextResponse.json(
-      { success: false, message: 'Server error: ' + error.message },
+      { success: false, message: 'Server error: ' + message },
       { status: 500 }
     );
   }
