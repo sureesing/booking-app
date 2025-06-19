@@ -13,6 +13,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Detect content type
+    const contentType = req.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      // Handle JSON requests (e.g., lookupStudent)
+      const body = await req.json();
+      if (body.action === 'lookupStudent' && body.studentId) {
+        // Forward to Apps Script
+        const response = await fetch(NEXT_PUBLIC_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'lookupStudent', studentId: body.studentId }),
+        });
+        const data = await response.json();
+        return NextResponse.json(data, { status: response.status });
+      } else {
+        return NextResponse.json(
+          { success: false, message: 'Invalid action or missing studentId' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Handle booking form submission (multipart/form-data)
     const formData = await req.formData();
     const image = formData.get('image') as File | null;
     let imageLink = 'No image provided';

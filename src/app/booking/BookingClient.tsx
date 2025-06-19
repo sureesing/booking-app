@@ -10,6 +10,8 @@ export default function BookingClient() {
   const [date, setDate] = useState<string>('');
   const [period, setPeriod] = useState<string>('');
   const [studentId, setStudentId] = useState<string>('');
+  const [studentProfile, setStudentProfile] = useState(null);
+  const [canSubmit, setCanSubmit] = useState(false);
   const [grade, setGrade] = useState<string>('');
   const [prefix, setPrefix] = useState<string>('');
   const [firstName, setFirstName] = useState<string>('');
@@ -164,6 +166,27 @@ export default function BookingClient() {
       setHasSubmitted(false);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleStudentIdBlur = async () => {
+    if (!studentId) return;
+    setError('');
+    const res = await fetch(`/api/proxy?action=lookupStudent&studentId=${studentId}`);
+    const data = await res.json();
+    if (data.success && data.student) {
+      setGrade(data.student.grade);
+      setPrefix(data.student.prefix);
+      setFirstName(data.student.firstName);
+      setLastName(data.student.lastName);
+      setCanSubmit(true);
+    } else {
+      setGrade('');
+      setPrefix('');
+      setFirstName('');
+      setLastName('');
+      setCanSubmit(false);
+      setError('ไม่พบข้อมูลนักเรียนนี้ในระบบ');
     }
   };
 
@@ -415,7 +438,9 @@ export default function BookingClient() {
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
                   value={studentId}
                   onChange={(e) => setStudentId(e.target.value)}
+                  onBlur={handleStudentIdBlur}
                   required
+                  disabled={!canSubmit}
                 />
               </div>
               <div>
@@ -587,7 +612,7 @@ export default function BookingClient() {
               whileTap={{ scale: 0.95 }}
               type="submit"
               className="w-full bg-gradient-to-r from-indigo-600 to-red-600 dark:from-indigo-700 dark:to-red-700 hover:from-indigo-700 hover:to-red-700 dark:hover:from-indigo-800 dark:hover:to-red-800 text-white font-semibold py-3 px-4 rounded-lg shadow-lg hover:shadow-[0_0_15px_rgba(99,102,241,0.5)] transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-              disabled={isLoading || hasSubmitted}
+              disabled={!canSubmit || isLoading || hasSubmitted}
             >
               {isLoading ? (
                 <span className="flex items-center space-x-2">
