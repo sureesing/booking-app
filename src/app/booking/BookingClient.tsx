@@ -1,24 +1,29 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { Calendar, User, LogOut, Moon, Sun, LayoutDashboard } from 'lucide-react';
+import { Calendar, Moon, Sun, LayoutDashboard } from 'lucide-react';
 
 export default function BookingClient() {
   const [isDark, setIsDark] = useState<boolean>(false);
+  const [date, setDate] = useState<string>('');
+  const [period, setPeriod] = useState<string>('');
+  const [studentId, setStudentId] = useState<string>('');
+  const [grade, setGrade] = useState<string>('');
+  const [prefix, setPrefix] = useState<string>('');
   const [firstName, setFirstName] = useState<string>('');
   const [lastName, setLastName] = useState<string>('');
-  const [timeSlot, setTimeSlot] = useState<string>('');
-  const [details, setDetails] = useState<string>('');
+  const [symptomCategory, setSymptomCategory] = useState<string>('');
+  const [customSymptoms, setCustomSymptoms] = useState<string>('');
+  const [treatment, setTreatment] = useState<string>('');
+  const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hasSubmitted, setHasSubmitted] = useState<boolean>(false);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const emailFromUrl = searchParams?.get('email') || '';
-  const [email, setEmail] = useState<string>(emailFromUrl);
 
   const { scrollYProgress } = useScroll();
   const headerOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0.9]);
@@ -31,19 +36,6 @@ export default function BookingClient() {
     document.documentElement.classList.toggle('dark', savedMode);
   }, []);
 
-  // Check for stored email and validate session
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const storedEmail = localStorage.getItem('userEmail');
-    if (!emailFromUrl && storedEmail) {
-      setEmail(storedEmail);
-      router.replace(`/booking?email=${encodeURIComponent(storedEmail)}`);
-    } else if (!emailFromUrl && !storedEmail) {
-      setError('กรุณาเข้าสู่ระบบเพื่อจองนัดหมาย');
-      router.replace('/login');
-    }
-  }, [emailFromUrl, router]);
-
   // Handle dark mode updates
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -51,19 +43,45 @@ export default function BookingClient() {
     localStorage.setItem('darkMode', isDark.toString());
   }, [isDark]);
 
+  // Handle image selection
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!['image/jpeg', 'image/png'].includes(file.type)) {
+        setError('กรุณาอัปโหลดไฟล์ภาพ (.jpg หรือ .png เท่านั้น)');
+        setImage(null);
+        setImagePreview(null);
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setError('ไฟล์ภาพต้องมีขนาดไม่เกิน 5MB');
+        setImage(null);
+        setImagePreview(null);
+        return;
+      }
+      setImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.onerror = () => {
+        setError('ไม่สามารถโหลดตัวอย่างภาพได้');
+        setImage(null);
+        setImagePreview(null);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setImage(null);
+      setImagePreview(null);
+    }
+  };
+
   const handleToggle = () => {
     setIsDark((prev) => !prev);
   };
 
-  const handleLogout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('userEmail');
-    }
-    router.replace('/login');
-  };
-
   const handleViewBookings = () => {
-    router.push(`/bookings?email=${encodeURIComponent(email)}`);
+    router.push('/bookings');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,66 +92,75 @@ export default function BookingClient() {
     setIsLoading(true);
     setHasSubmitted(true);
 
-    if (!firstName || !lastName || !timeSlot || !details) {
+    // Validate inputs
+    if (!date || !period || !studentId || !grade || !prefix || !firstName || !lastName || !symptomCategory || (symptomCategory === 'อื่นๆ' && !customSymptoms) || !treatment) {
       setError('กรุณากรอกข้อมูลให้ครบถ้วน');
       setIsLoading(false);
       setHasSubmitted(false);
       return;
     }
 
-    try {
-      const scriptUrl = process.env.NEXT_PUBLIC_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbxOAMq6q5ir0e_j1_2Pc_2KG9r_LovObThQlaO8-LUrHij9zzmGR-mYbtzEgwnjhoNl/exec';
-      if (!scriptUrl) {
-        throw new Error('Missing NEXT_PUBLIC_SCRIPT_URL environment variable');
-      }
+    // Validate student ID (numeric only)
+    if (!/^\d+$/.test(studentId)) {
+      setError('รหัสนักเรียนต้องเป็นตัวเลขเท่านั้น');
+      setIsLoading(false);
+      setHasSubmitted(false);
+      return;
+    }
 
-      const formData = new URLSearchParams();
-      formData.append('email', email);
+    // Prepare symptoms
+    const symptoms = symptomCategory === 'อื่นๆ' ? customSymptoms : symptomCategory;
+
+    try {
+      const scriptUrl = '/api/proxy';
+      const formData = new FormData();
+      formData.append('date', date);
+      formData.append('period', period);
+      formData.append('studentId', studentId);
+      formData.append('grade', grade);
+      formData.append('prefix', prefix);
       formData.append('firstName', firstName);
       formData.append('lastName', lastName);
-      formData.append('timeSlot', timeSlot);
-      formData.append('details', details);
+      formData.append('symptoms', symptoms);
+      formData.append('treatment', treatment);
 
-      console.log('Submitting booking with data:', {
-        email,
-        firstName,
-        lastName,
-        timeSlot,
-        details,
-      });
+      if (image) {
+        formData.append('image', image);
+      }
 
       const response = await fetch(scriptUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: formData.toString(),
-        mode: 'cors',
-        credentials: 'omit',
+        body: formData,
       });
 
-      console.log('POST response status:', response.status);
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, details: ${errorText}`);
       }
 
       const data = await response.json();
-      console.log('POST response data:', data);
 
       if (data.success) {
+        setDate('');
+        setPeriod('');
+        setStudentId('');
+        setGrade('');
+        setPrefix('');
         setFirstName('');
         setLastName('');
-        setTimeSlot('');
-        setDetails('');
+        setSymptomCategory('');
+        setCustomSymptoms('');
+        setTreatment('');
+        setImage(null);
+        setImagePreview(null);
         setHasSubmitted(false);
-        router.push(`/bookings?email=${encodeURIComponent(email)}`);
+        router.push('/bookings');
       } else {
-        setError(data.message || 'ไม่สามารถจองได้ กรุณาลองอีกครั้ง');
+        setError(data.message || 'ไม่สามารถบันทึกได้ กรุณาลองอีกครั้ง');
         setHasSubmitted(false);
       }
-    } catch (err) {
-      console.error('POST error:', err);
-      setError('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองอีกครั้ง');
+    } catch (err: any) {
+      setError('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้: ' + err.message);
       setHasSubmitted(false);
     } finally {
       setIsLoading(false);
@@ -151,6 +178,23 @@ export default function BookingClient() {
     { display: 'คาบ 7', value: '14:30-15:30' },
     { display: 'คาบ 8', value: '15:30-16:30' },
   ];
+
+  const prefixes = ['เด็กชาย', 'เด็กหญิง', 'นาย', 'นางสาว'];
+
+  const symptomCategories = ['ปวดหัว', 'ไข้', 'ปวดท้อง', 'เจ็บคอ', 'บาดเจ็บ', 'อื่นๆ'];
+
+  // Generate grade options (1/1 to 6/12)
+  const gradeOptions: string[] = [];
+  for (let level = 1; level <= 6; level++) {
+    for (let room = 1; room <= 12; room++) {
+      gradeOptions.push(`${level}/${room}`);
+    }
+  }
+
+  // Define min and max date for input (original range)
+  const currentYear = new Date().getFullYear();
+  const minDate = `${currentYear}-01-01`;
+  const maxDate = `${currentYear + 1}-12-31`;
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-100 via-indigo-100 to-red-100 dark:from-indigo-950 dark:via-gray-900 dark:to-red-950 transition-colors duration-700">
@@ -172,18 +216,14 @@ export default function BookingClient() {
             </span>
           </div>
           <div className="hidden md:flex items-center space-x-6">
-            <div className="flex items-center space-x-2 text-gray-950 dark:text-gray-100">
-              <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-              <span className="text-sm font-medium">{email}</span>
-            </div>
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => router.push(`/dashboard?email=${encodeURIComponent(email)}`)}
+              onClick={() => router.push('/dashboard')}
               className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
             >
               <LayoutDashboard className="w-4 h-4" />
-              <span>Dashboard</span>
+              <span>แดชบอร์ด</span>
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
@@ -192,7 +232,7 @@ export default function BookingClient() {
               className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
             >
               <Calendar className="w-4 h-4" />
-              <span>Bookings</span>
+              <span>ประวัติการบันทึก</span>
             </motion.button>
             <label className="relative inline-flex items-center cursor-pointer group">
               <input
@@ -205,22 +245,13 @@ export default function BookingClient() {
                 <motion.div
                   className="absolute left-1.5 top-1.5 w-7 h-7 bg-white dark:bg-gray-100 rounded-full shadow-lg flex items-center justify-center transform peer-checked:translate-x-10 transition-transform duration-500"
                 >
-                  <span className="text-sm">{isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}</span>
+                  {isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}
                 </motion.div>
               </div>
               <span className="ml-4 text-sm font-semibold text-gray-950 dark:text-gray-100 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
-                {isDark ? 'Light Mode' : 'Dark Mode'}
+                {isDark ? 'โหมดสว่าง' : 'โหมดมืด'}
               </span>
             </label>
-            <motion.button
-              whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleLogout}
-              className="bg-gradient-to-r from-indigo-600 to-red-600 dark:from-indigo-700 dark:to-red-700 text-white text-sm font-medium py-2 px-5 rounded-full shadow-md hover:shadow-lg transition-all duration-300 flex items-center space-x-2"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Logout</span>
-            </motion.button>
           </div>
           <div className="md:hidden flex items-center">
             <motion.button
@@ -229,7 +260,12 @@ export default function BookingClient() {
               className="text-gray-950 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none"
             >
               <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'} />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d={isMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'}
+                />
               </svg>
             </motion.button>
           </div>
@@ -244,18 +280,14 @@ export default function BookingClient() {
               className="md:hidden bg-white/95 dark:bg-gray-850/95 backdrop-blur-2xl border-t border-gray-200/50 dark:border-[rgba(99,102,241,0.5)]"
             >
               <div className="px-4 py-4 flex flex-col space-y-4">
-                <div className="flex items-center space-x-2 text-gray-950 dark:text-gray-100">
-                  <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                  <span className="text-sm font-medium">{email}</span>
-                </div>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => router.push(`/dashboard?email=${encodeURIComponent(email)}`)}
+                  onClick={() => router.push('/dashboard')}
                   className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
                 >
                   <LayoutDashboard className="w-4 h-4" />
-                  <span>Dashboard</span>
+                  <span>แดชบอร์ด</span>
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -264,9 +296,9 @@ export default function BookingClient() {
                   className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
                 >
                   <Calendar className="w-4 h-4" />
-                  <span>Bookings</span>
+                  <span>ประวัติการบันทึก</span>
                 </motion.button>
-                <label className="relative inline-flex items-center cursor-pointer">
+                <label className="relative inline-flex items-center cursor-pointer group">
                   <input
                     type="checkbox"
                     checked={isDark}
@@ -277,22 +309,13 @@ export default function BookingClient() {
                     <motion.div
                       className="absolute left-1.5 top-1.5 w-7 h-7 bg-white dark:bg-gray-100 rounded-full shadow-lg flex items-center justify-center transform peer-checked:translate-x-10 transition-transform duration-500"
                     >
-                      <span className="text-sm">{isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}</span>
+                      {isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}
                     </motion.div>
                   </div>
                   <span className="ml-4 text-sm font-semibold text-gray-950 dark:text-gray-100 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
-                    {isDark ? 'Light Mode' : 'Dark Mode'}
+                    {isDark ? 'โหมดสว่าง' : 'โหมดมืด'}
                   </span>
                 </label>
-                <motion.button
-                  whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleLogout}
-                  className="bg-gradient-to-r from-indigo-600 to-red-600 dark:from-indigo-700 dark:to-red-700 text-white text-sm font-medium py-2 px-5 rounded-full shadow-md hover:shadow-lg transition-all duration-300 flex items-center space-x-2"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Logout</span>
-                </motion.button>
               </div>
             </motion.div>
           )}
@@ -305,11 +328,17 @@ export default function BookingClient() {
           initial={{ opacity: 0, y: 50, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="w-full max-w-lg p-8 sm:p-10 rounded-3xl bg-white/90 dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500 hover:scale-105"
+          className="w-full max-w-2xl p-8 sm:p-10 rounded-3xl bg-white/90 dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500"
         >
-          <h2 className="text-4xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400 mb-8 tracking-tight">
-            ระบบจองการใช้ห้องพยาบาล
+          <h2 className="text-4xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400 mb-4 tracking-tight">
+            โรงเรียนสิงห์บุรี
           </h2>
+          <h3 className="text-2xl font-semibold text-center text-gray-950 dark:text-gray-100 mb-4">
+            ระบบบันทึกนักเรียนเข้ารับบริการห้องพยาบาล
+          </h3>
+          <p className="text-center text-lg text-gray-950 dark:text-gray-100 mb-8">
+            ปีการศึกษา 2567
+          </p>
           <AnimatePresence>
             {error && (
               <motion.p
@@ -324,10 +353,104 @@ export default function BookingClient() {
             )}
           </AnimatePresence>
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="date" className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
+                วันที่
+              </label>
+              <motion.input
+                whileHover={{ scale: 1.02 }}
+                whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
+                type="date"
+                id="date"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/90 dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                min={minDate}
+                max={maxDate}
+                required
+              />
+            </div>
+            <div>
+              <label className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
+                คาบเรียน
+              </label>
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
+                {timeSlots.map((slot) => (
+                  <motion.div
+                    key={slot.value}
+                    whileHover={{ scale: 1.1, boxShadow: '0 0 10px rgba(99,102,241,0.3)' }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`flex items-center justify-center w-16 h-16 rounded-full border-2 cursor-pointer transition-all duration-300 ${
+                      period === slot.value
+                        ? 'bg-gradient-to-r from-indigo-600 to-red-600 text-white border-indigo-600 dark:border-indigo-500 shadow-lg'
+                        : 'bg-white/90 dark:bg-gray-700/80 border-gray-300 dark:border-indigo-600 text-gray-950 dark:text-gray-100 hover:bg-indigo-100 dark:hover:bg-indigo-900/50'
+                    }`}
+                    onClick={() => setPeriod(slot.value)}
+                  >
+                    <span className="text-sm font-medium">{slot.display}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="studentId" className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
+                  เลขประจำตัวนักเรียน
+                </label>
+                <motion.input
+                  whileHover={{ scale: 1.02 }}
+                  whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
+                  type="text"
+                  id="studentId"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/90 dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
+                  value={studentId}
+                  onChange={(e) => setStudentId(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="grade" className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
+                  ชั้น
+                </label>
+                <motion.select
+                  whileHover={{ scale: 1.02 }}
+                  whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
+                  id="grade"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/90 dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
+                  value={grade}
+                  onChange={(e) => setGrade(e.target.value)}
+                  required
+                >
+                  <option value="">เลือกชั้น</option>
+                  {gradeOptions.map((g) => (
+                    <option key={g} value={g}>{`ม.${g}`}</option>
+                  ))}
+                </motion.select>
+              </div>
+            </div>
+            <div>
+              <label htmlFor="prefix" className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
+                คำนำหน้า
+              </label>
+              <motion.select
+                whileHover={{ scale: 1.02 }}
+                whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
+                id="prefix"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/90 dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
+                value={prefix}
+                onChange={(e) => setPrefix(e.target.value)}
+                required
+              >
+                <option value="">เลือกคำนำหน้า</option>
+                {prefixes.map((p) => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </motion.select>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="firstName" className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
-                  ชื่อจริง
+                  ชื่อ
                 </label>
                 <motion.input
                   whileHover={{ scale: 1.02 }}
@@ -357,40 +480,80 @@ export default function BookingClient() {
               </div>
             </div>
             <div>
-              <label className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
-                เวลาในการเข้าใช้งาน
+              <label htmlFor="symptomCategory" className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
+                อาการ
               </label>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
-                {timeSlots.map((slot) => (
-                  <motion.div
-                    key={slot.value}
-                    whileHover={{ scale: 1.1, boxShadow: '0 0 10px rgba(99,102,241,0.3)' }}
-                    whileTap={{ scale: 0.95 }}
-                    className={`flex items-center justify-center w-16 h-16 rounded-full border-2 cursor-pointer transition-all duration-300 ${
-                      timeSlot === slot.value
-                        ? 'bg-gradient-to-r from-indigo-600 to-red-600 text-white border-indigo-600 dark:border-indigo-500 shadow-lg'
-                        : 'bg-white/90 dark:bg-gray-700/80 border-gray-300 dark:border-indigo-600 text-gray-950 dark:text-gray-100 hover:bg-indigo-100 dark:hover:bg-indigo-900/50'
-                    }`}
-                    onClick={() => setTimeSlot(slot.value)}
-                  >
-                    <span className="text-sm font-medium">{slot.display}</span>
-                  </motion.div>
+              <motion.select
+                whileHover={{ scale: 1.02 }}
+                whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
+                id="symptomCategory"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/90 dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
+                value={symptomCategory}
+                onChange={(e) => setSymptomCategory(e.target.value)}
+                required
+              >
+                <option value="">เลือกอาการ</option>
+                {symptomCategories.map((category) => (
+                  <option key={category} value={category}>{category}</option>
                 ))}
+              </motion.select>
+            </div>
+            {symptomCategory === 'อื่นๆ' && (
+              <div>
+                <label htmlFor="customSymptoms" className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
+                  ระบุอาการเพิ่มเติม
+                </label>
+                <motion.textarea
+                  whileHover={{ scale: 1.02 }}
+                  whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
+                  id="customSymptoms"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/90 dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
+                  value={customSymptoms}
+                  onChange={(e) => setCustomSymptoms(e.target.value)}
+                  rows={4}
+                  placeholder="ระบุอาการ เช่น ท้องเสีย คลื่นไส้"
+                  required
+                />
               </div>
+            )}
+            <div>
+              <label htmlFor="image" className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
+                แนบรูปภาพ (ถ้ามี)
+              </label>
+              <motion.input
+                whileHover={{ scale: 1.02 }}
+                whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
+                type="file"
+                id="image"
+                accept="image/jpeg,image/png"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/90 dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
+                onChange={handleImageChange}
+              />
+              {imagePreview && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="mt-4"
+                >
+                  <p className="text-sm text-gray-950 dark:text-gray-100 mb-2">ตัวอย่างภาพ:</p>
+                  <img src={imagePreview} alt="Image Preview" className="max-w-xs rounded-lg shadow-sm" />
+                </motion.div>
+              )}
             </div>
             <div>
-              <label htmlFor="details" className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
-                อาการที่เป็น
+              <label htmlFor="treatment" className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
+                การรักษา
               </label>
               <motion.textarea
                 whileHover={{ scale: 1.02 }}
                 whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
-                id="details"
+                id="treatment"
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white/90 dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
-                value={details}
-                onChange={(e) => setDetails(e.target.value)}
-                rows={5}
-                placeholder="ใส่รายละเอียดอาการที่เป็น เช่น ปวดหัว ท้องเสีย คลื่นไส้ อาเจียน"
+                value={treatment}
+                onChange={(e) => setTreatment(e.target.value)}
+                rows={4}
+                placeholder="เช่น ให้ยาแก้ปวด พักผ่อน"
                 required
               />
             </div>
@@ -407,12 +570,12 @@ export default function BookingClient() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                   </svg>
-                  <span>ยืนยันการจอง...</span>
+                  <span>บันทึกข้อมูล...</span>
                 </span>
               ) : (
                 <span className="flex items-center space-x-2">
                   <Calendar className="w-5 h-5" />
-                  <span>ยืนยันการจอง</span>
+                  <span>บันทึกข้อมูล</span>
                 </span>
               )}
             </motion.button>
@@ -423,12 +586,12 @@ export default function BookingClient() {
       {/* Decorative Background Elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <motion.div
-          className="absolute -top-20 -left-20 w-64 h-64 bg-indigo-200/20 dark:bg-indigo-600/20 rounded-full mix-blend-multiply filter blur-3xl"
+          className="absolute -top-20 -left-20 w-64 h-64 bg-indigo-200/20 dark:bg-indigo-400/40 rounded-full mix-blend-multiply filter blur-3xl"
           animate={{ scale: [1, 1.2, 1], x: [0, 15, 0], y: [0, 20, 0] }}
           transition={{ duration: 7, repeat: Infinity, repeatType: 'reverse' }}
         />
         <motion.div
-          className="absolute -bottom-20 -right-20 w-80 h-80 bg-red-200/20 dark:bg-red-600/20 rounded-full mix-blend-multiply filter blur-3xl"
+          className="absolute -bottom-20 -right-20 w-80 h-80 bg-red-200/20 dark:bg-red-400/40 rounded-full mix-blend-multiply filter blur-3xl"
           animate={{ scale: [1, 1.3, 1], x: [0, -15, 0], y: [0, -20, 0] }}
           transition={{ duration: 9, repeat: Infinity, repeatType: 'reverse' }}
         />

@@ -1,16 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { Calendar, User, LogOut, Moon, Sun, LayoutDashboard, Search } from 'lucide-react';
+import { Calendar, Moon, Sun, LayoutDashboard, Search } from 'lucide-react';
 
 interface Booking {
-  email: string;
   firstName: string;
   lastName: string;
   timeSlot: string;
-  details?: string;
+  symptoms?: string;
+  treatment?: string;
+}
+
+interface TimeSlot {
+  display: string;
+  value: string;
 }
 
 export default function BookingsClient() {
@@ -22,9 +27,6 @@ export default function BookingsClient() {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filterTimeSlot, setFilterTimeSlot] = useState<string>('all');
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const emailFromUrl = searchParams?.get('email') || '';
-  const [email, setEmail] = useState<string>(emailFromUrl);
 
   const { scrollYProgress } = useScroll();
   const headerOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0.9]);
@@ -37,19 +39,6 @@ export default function BookingsClient() {
     document.documentElement.classList.toggle('dark', savedMode);
   }, []);
 
-  // Check for stored email and validate session
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const storedEmail = localStorage.getItem('userEmail');
-    if (!emailFromUrl && storedEmail) {
-      setEmail(storedEmail);
-      router.replace(`/bookings?email=${encodeURIComponent(storedEmail)}`);
-    } else if (!emailFromUrl && !storedEmail) {
-      setError('กรุณาเข้าสู่ระบบเพื่อดูประวัติการจอง');
-      router.replace('/login');
-    }
-  }, [emailFromUrl, router]);
-
   // Handle dark mode updates
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -59,18 +48,16 @@ export default function BookingsClient() {
 
   // Fetch bookings
   useEffect(() => {
-    if (!email) return;
     const fetchBookings = async () => {
       setIsLoading(true);
       setError('');
       try {
-        const scriptUrl = process.env.NEXT_PUBLIC_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbxOAMq6q5ir0e_j1_2Pc_2KG9r_LovObThQlaO8-LUrHij9zzmGR-mYbtzEgwnjhoNl/exec';
+        const scriptUrl = process.env.NEXT_PUBLIC_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbx3Ur6OqLhIsK7XwAh5w3ey3CARGohbg8mRyt7OLboGeum-cfFXVguCXo_YJbhgftT4/exec';
         if (!scriptUrl) {
           throw new Error('Missing NEXT_PUBLIC_SCRIPT_URL environment variable');
         }
         const query = new URLSearchParams({
           action: 'getBookings',
-          email: email,
         });
         console.log('Fetching bookings with URL:', `${scriptUrl}?${query.toString()}`);
         const response = await fetch(`${scriptUrl}?${query.toString()}`, {
@@ -85,7 +72,15 @@ export default function BookingsClient() {
         const data = await response.json();
         console.log('API response:', data);
         if (data.success) {
-          setBookings(Array.isArray(data.bookings) ? data.bookings : []);
+          // Map server response to match Booking interface
+          const mappedBookings = Array.isArray(data.bookings) ? data.bookings.map((booking: any) => ({
+            firstName: booking.firstName || '',
+            lastName: booking.lastName || '',
+            timeSlot: booking.period || booking.timeSlot || '',
+            symptoms: booking.symptoms || '',
+            treatment: booking.treatment || '',
+          })) : [];
+          setBookings(mappedBookings);
         } else {
           setError(data.message || 'ไม่สามารถดึงข้อมูลการจองได้');
         }
@@ -98,7 +93,21 @@ export default function BookingsClient() {
       }
     };
     fetchBookings();
-  }, [email]);
+  }, []);
+
+  // Define time slots consistent with BookingClient
+  const timeSlots: TimeSlot[] = [
+    { display: 'ทุกช่วงเวลา', value: 'all' },
+    { display: 'คาบ 0', value: '07:30-08:00' },
+    { display: 'คาบ 1', value: '08:30-09:30' },
+    { display: 'คาบ 2', value: '09:30-10:30' },
+    { display: 'คาบ 3', value: '10:30-11:30' },
+    { display: 'คาบ 4', value: '11:30-12:30' },
+    { display: 'คาบ 5', value: '12:30-13:30' },
+    { display: 'คาบ 6', value: '13:30-14:30' },
+    { display: 'คาบ 7', value: '14:30-15:30' },
+    { display: 'คาบ 8', value: '15:30-16:30' },
+  ];
 
   // Filter and search bookings
   const filteredBookings = bookings.filter((booking) => {
@@ -106,28 +115,19 @@ export default function BookingsClient() {
       booking.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.timeSlot.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (booking.details && booking.details.toLowerCase().includes(searchTerm.toLowerCase()))
+      (booking.symptoms && booking.symptoms.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (booking.treatment && booking.treatment.toLowerCase().includes(searchTerm.toLowerCase()))
     );
     const matchesFilter = filterTimeSlot === 'all' || booking.timeSlot === filterTimeSlot;
     return matchesSearch && matchesFilter;
   });
 
-  // Get unique time slots for filter
-  const timeSlots = ['all', ...new Set(bookings.map((booking) => booking.timeSlot))];
-
   const handleToggle = () => {
     setIsDark((prev) => !prev);
   };
 
-  const handleLogout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('userEmail');
-    }
-    router.replace('/login');
-  };
-
   const handleBookNow = () => {
-    router.push(`/booking?email=${encodeURIComponent(email)}`);
+    router.push('/booking');
   };
 
   return (
@@ -150,14 +150,10 @@ export default function BookingsClient() {
             </span>
           </div>
           <div className="hidden md:flex items-center space-x-6">
-            <div className="flex items-center space-x-2 text-gray-950 dark:text-gray-100">
-              <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-              <span className="text-sm font-medium">{email}</span>
-            </div>
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => router.push(`/dashboard?email=${encodeURIComponent(email)}`)}
+              onClick={() => router.push('/dashboard')}
               className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
             >
               <LayoutDashboard className="w-4 h-4" />
@@ -190,15 +186,6 @@ export default function BookingsClient() {
                 {isDark ? 'โหมดสว่าง' : 'โหมดมืด'}
               </span>
             </label>
-            <motion.button
-              whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleLogout}
-              className="bg-gradient-to-r from-indigo-600 to-red-600 dark:from-indigo-700 dark:to-red-700 text-white text-sm font-medium py-2 px-5 rounded-full shadow-md hover:shadow-lg transition-all duration-300 flex items-center space-x-2"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>ออกจากระบบ</span>
-            </motion.button>
           </div>
           <div className="md:hidden flex items-center">
             <motion.button
@@ -222,14 +209,10 @@ export default function BookingsClient() {
               className="md:hidden bg-white/95 dark:bg-gray-850/95 backdrop-blur-2xl border-t border-gray-200/50 dark:border-[rgba(99,102,241,0.5)]"
             >
               <div className="px-4 py-4 flex flex-col space-y-4">
-                <div className="flex items-center space-x-2 text-gray-950 dark:text-gray-100">
-                  <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                  <span className="text-sm font-medium">{email}</span>
-                </div>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => router.push(`/dashboard?email=${encodeURIComponent(email)}`)}
+                  onClick={() => router.push('/dashboard')}
                   className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
                 >
                   <LayoutDashboard className="w-4 h-4" />
@@ -262,15 +245,6 @@ export default function BookingsClient() {
                     {isDark ? 'โหมดสว่าง' : 'โหมดมืด'}
                   </span>
                 </label>
-                <motion.button
-                  whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleLogout}
-                  className="bg-gradient-to-r from-indigo-600 to-red-600 dark:from-indigo-700 dark:to-red-700 text-white text-sm font-medium py-2 px-5 rounded-full shadow-md hover:shadow-lg transition-all duration-300 flex items-center space-x-2"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>ออกจากระบบ</span>
-                </motion.button>
               </div>
             </motion.div>
           )}
@@ -318,8 +292,8 @@ export default function BookingsClient() {
               className="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               {timeSlots.map((slot) => (
-                <option key={slot} value={slot}>
-                  {slot === 'all' ? 'ทุกช่วงเวลา' : slot}
+                <option key={slot.value} value={slot.value}>
+                  {slot.display}
                 </option>
               ))}
             </select>
@@ -344,6 +318,7 @@ export default function BookingsClient() {
                     <th className="p-4 text-sm font-semibold text-gray-950 dark:text-gray-100">นามสกุล</th>
                     <th className="p-4 text-sm font-semibold text-gray-950 dark:text-gray-100">เวลา</th>
                     <th className="p-4 text-sm font-semibold text-gray-950 dark:text-gray-100">อาการ</th>
+                    <th className="p-4 text-sm font-semibold text-gray-950 dark:text-gray-100">การรักษา</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -355,10 +330,13 @@ export default function BookingsClient() {
                       transition={{ duration: 0.3, delay: index * 0.1 }}
                       className="border-t border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
                     >
-                      <td className="p-4 text-sm text-gray-950 dark:text-gray-100">{booking.firstName}</td>
-                      <td className="p-4 text-sm text-gray-950 dark:text-gray-100">{booking.lastName}</td>
-                      <td className="p-4 text-sm text-gray-950 dark:text-gray-100">{booking.timeSlot}</td>
-                      <td className="p-4 text-sm text-gray-950 dark:text-gray-100">{booking.details || 'N/A'}</td>
+                      <td className="p-4 text-sm text-gray-950 dark:text-gray-100">{booking.firstName || 'N/A'}</td>
+                      <td className="p-4 text-sm text-gray-950 dark:text-gray-100">{booking.lastName || 'N/A'}</td>
+                      <td className="p-4 text-sm text-gray-950 dark:text-gray-100">
+                        {timeSlots.find((slot) => slot.value === booking.timeSlot)?.display || booking.timeSlot || 'N/A'}
+                      </td>
+                      <td className="p-4 text-sm text-gray-950 dark:text-gray-100">{booking.symptoms || 'N/A'}</td>
+                      <td className="p-4 text-sm text-gray-950 dark:text-gray-100">{booking.treatment || 'N/A'}</td>
                     </motion.tr>
                   ))}
                 </tbody>

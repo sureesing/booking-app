@@ -1,19 +1,22 @@
-'use client';
+// src/app/page.tsx
+'use client'
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function HomePage() {
-  const router = useRouter();
+  const router = useRouter()
 
   useEffect(() => {
-    const storedEmail = localStorage.getItem('userEmail');
-    if (storedEmail) {
-      router.replace(`/dashboard?email=${encodeURIComponent(storedEmail)}`);
-    } else {
-      router.replace('/login');
+    const token = localStorage.getItem('token')
+    if (!token) {
+      router.push('/booking')
     }
-  }, [router]);
+  }, [])
 
-  return null; // ไม่ render อะไร เพราะ redirect ทันที
+  return (
+    <main className="flex flex-col items-center justify-center h-screen">
+      <h1 className="text-3xl">Welcome to the main page!</h1>
+    </main>
+  )
 }
