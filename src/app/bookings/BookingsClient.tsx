@@ -315,7 +315,7 @@ export default function BookingsClient() {
                   transition={{ duration: 0.3, delay: index * 0.04 }}
                   className="flex items-center gap-4 bg-white dark:bg-gray-850 rounded-xl shadow-md hover:shadow-xl border border-gray-100 dark:border-gray-800 p-4 transition-all duration-200 group"
                 >
-                  <div className="w-12 h-12 flex items-center justify-center rounded-full bg-red-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 text-xl font-bold">
+                  <div className="w-12 h-12 flex items-center justify-center rounded-full custom-user-avatar text-indigo-600 dark:text-indigo-300 text-xl font-bold">
                     <User className="w-7 h-7" />
                   </div>
                   <div className="flex-1 min-w-0">
