@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { Calendar, Moon, Sun, LayoutDashboard } from 'lucide-react';
+import Image from 'next/image';
 
 interface StudentProfile {
   studentId: string;
@@ -424,18 +425,25 @@ export default function BookingClient() {
           className="w-full max-w-2xl p-8 sm:p-10 rounded-3xl bg-white dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500"
           style={{ backgroundColor: 'white' }}
         > <div className="flex justify-center mb-4">
-            <motion.img
+            <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, ease: 'easeOut' }}
-              src="/logo.png"
-              alt="โรงเรียนสิงห์บุรี"
-              className="w-20 h-20 sm:w-24 sm:h-24 object-contain"
-              onError={(e) => {
-                // Hide the image if it fails to load
-                e.currentTarget.style.display = 'none';
-              }}
-            />
+              className="relative w-20 h-20 sm:w-24 sm:h-24"
+            >
+              <Image
+                src="/logo-small.png"
+                alt="โรงเรียนสิงห์บุรี"
+                fill
+                className="object-contain"
+                priority
+                sizes="(max-width: 640px) 80px, 96px"
+                onError={(e) => {
+                  // Hide the image if it fails to load
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            </motion.div>
           </div>
           <h2 className="text-4xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400 mb-4 tracking-tight">
             โรงเรียนสิงห์บุรี
