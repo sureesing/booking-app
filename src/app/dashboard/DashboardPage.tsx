@@ -247,19 +247,18 @@ export default function DashboardPage() {
   const today = new Date();
   today.setHours(0, 0, 0, 0); // Set to start of day
   const sevenDaysAgo = new Date(today);
-  sevenDaysAgo.setDate(today.getDate() - 7);
+  sevenDaysAgo.setDate(today.getDate() - 6); // 7 days total (today + 6 days back)
   console.log('Today:', today.toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok' }));
   console.log('Seven days ago:', sevenDaysAgo.toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok' }));
 
   // Generate all dates in the last 7 days for labels
   const dateRange: string[] = [];
-  for (let i = 0; i <= 7; i++) {
+  for (let i = 6; i >= 0; i--) { // Start from 6 days ago, go to today
     const date = new Date(today);
     date.setDate(today.getDate() - i);
     dateRange.push(date.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Bangkok' }));
   }
-  dateRange.reverse(); // Sort from oldest to newest
-  console.log('Date Range:', dateRange);
+  console.log('Date Range (last 7 days):', dateRange);
 
   // Collect unique dates from bookings within the last 7 days
   console.log('Processing daily counts for bookings:', bookings);

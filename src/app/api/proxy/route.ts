@@ -19,13 +19,39 @@ export async function POST(req: NextRequest) {
       // Handle JSON requests (e.g., lookupStudent)
       const body = await req.json();
       if (body.action === 'lookupStudent' && body.studentId) {
-        // Forward to Apps Script
-        const response = await fetch(NEXT_PUBLIC_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'lookupStudent', studentId: body.studentId }),
+        // Forward to Apps Script with GET parameters
+        const scriptUrl = process.env.NEXT_PUBLIC_SCRIPT_URL || '';
+        const lookupUrl = `${scriptUrl}?action=lookupStudent&studentId=${encodeURIComponent(body.studentId)}`;
+        console.log('Looking up student with URL:', lookupUrl);
+        
+        // Try GET first
+        let response = await fetch(lookupUrl, {
+          method: 'GET',
+          mode: 'cors',
+          credentials: 'omit',
         });
-        const data = await response.json();
+        
+        console.log('GET response status:', response.status);
+        let data = await response.json();
+        console.log('GET response data:', data);
+        
+        // If GET fails, try POST
+        if (!data.success && data.message && data.message.includes('Invalid')) {
+          console.log('Trying POST method...');
+          response = await fetch(scriptUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'lookupStudent',
+              studentId: body.studentId
+            }),
+          });
+          
+          console.log('POST response status:', response.status);
+          data = await response.json();
+          console.log('POST response data:', data);
+        }
+        
         return NextResponse.json(data, { status: response.status });
       } else {
         return NextResponse.json(
@@ -115,6 +141,7 @@ export async function POST(req: NextRequest) {
 
     // Prepare payload for Google Apps Script
     const payload = {
+      timestamp: new Date().toISOString(),
       date: formData.get('date') || 'N/A',
       period: formData.get('period') || 'N/A',
       studentId: formData.get('studentId') || 'N/A',

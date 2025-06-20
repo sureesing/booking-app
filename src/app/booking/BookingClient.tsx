@@ -1,16 +1,24 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { Calendar, Moon, Sun, LayoutDashboard } from 'lucide-react';
+
+interface StudentProfile {
+  studentId: string;
+  grade: string;
+  prefix: string;
+  firstName: string;
+  lastName: string;
+}
 
 export default function BookingClient() {
   const [isDark, setIsDark] = useState<boolean>(false);
   const [date, setDate] = useState<string>('');
   const [period, setPeriod] = useState<string>('');
   const [studentId, setStudentId] = useState<string>('');
-  const [studentProfile, setStudentProfile] = useState(null);
+  const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null);
   const [canSubmit, setCanSubmit] = useState(false);
   const [grade, setGrade] = useState<string>('');
   const [prefix, setPrefix] = useState<string>('');
@@ -23,9 +31,11 @@ export default function BookingClient() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLookingUp, setIsLookingUp] = useState<boolean>(false);
   const [hasSubmitted, setHasSubmitted] = useState<boolean>(false);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const router = useRouter();
+  const lastLookedUpId = useRef<string>('');
 
   const { scrollYProgress } = useScroll();
   const headerOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0.9]);
@@ -93,6 +103,14 @@ export default function BookingClient() {
     setError('');
     setIsLoading(true);
     setHasSubmitted(true);
+
+    // Check if student is found in data sheet
+    if (!canSubmit) {
+      setError('กรุณากรอกรหัสนักเรียนที่ถูกต้องและมีอยู่ในระบบ');
+      setIsLoading(false);
+      setHasSubmitted(false);
+      return;
+    }
 
     // Validate inputs
     if (!date || !period || !studentId || !grade || !prefix || !firstName || !lastName || !symptomCategory || (symptomCategory === 'อื่นๆ' && !customSymptoms) || !treatment) {
@@ -169,26 +187,78 @@ export default function BookingClient() {
     }
   };
 
-  const handleStudentIdBlur = async () => {
-    if (!studentId) return;
-    setError('');
-    const res = await fetch(`/api/proxy?action=lookupStudent&studentId=${studentId}`);
-    const data = await res.json();
-    if (data.success && data.student) {
-      setGrade(data.student.grade);
-      setPrefix(data.student.prefix);
-      setFirstName(data.student.firstName);
-      setLastName(data.student.lastName);
-      setCanSubmit(true);
-    } else {
-      setGrade('');
-      setPrefix('');
-      setFirstName('');
-      setLastName('');
+  const handleStudentIdBlur = useCallback(async () => {
+    if (!studentId) {
       setCanSubmit(false);
-      setError('ไม่พบข้อมูลนักเรียนนี้ในระบบ');
+      return;
     }
-  };
+    
+    // Prevent duplicate API calls
+    if (isLookingUp) {
+      return;
+    }
+    
+    // Prevent API call if student data is already loaded for this ID
+    if (studentProfile && studentProfile.studentId === studentId) {
+      return;
+    }
+    
+    // Prevent API call if this ID was already looked up
+    if (lastLookedUpId.current === studentId) {
+      return;
+    }
+    
+    setError('');
+    setIsLookingUp(true);
+    
+    try {
+      const response = await fetch('/api/proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'lookupStudent',
+          studentId: studentId
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success && data.student) {
+        // Autofill student data
+        console.log('Received student data:', data.student);
+        
+        // Handle grade format - remove "ม." prefix if present
+        const gradeValue = data.student.grade.replace('ม.', '');
+        setGrade(gradeValue);
+        
+        setPrefix(data.student.prefix);
+        setFirstName(data.student.firstName);
+        setLastName(data.student.lastName);
+        setStudentProfile(data.student);
+        setCanSubmit(true);
+        setError(''); // Clear any previous errors
+        lastLookedUpId.current = studentId; // บันทึก ID ที่ lookup แล้ว
+      } else {
+        // Student not found - clear form and disable submit
+        setGrade('');
+        setPrefix('');
+        setFirstName('');
+        setLastName('');
+        setStudentProfile(null);
+        setCanSubmit(false);
+        setError('ไม่พบข้อมูลนักเรียนนี้ในระบบ กรุณาตรวจสอบรหัสนักเรียน');
+        lastLookedUpId.current = studentId; // บันทึก ID ที่ lookup แล้ว (แม้ไม่พบ)
+      }
+    } catch (err) {
+      console.error('Error looking up student:', err);
+      setError('ไม่สามารถตรวจสอบข้อมูลนักเรียนได้ กรุณาลองอีกครั้ง');
+      setCanSubmit(false);
+    } finally {
+      setIsLookingUp(false);
+    }
+  }, [studentId, isLookingUp, studentProfile]);
 
   const timeSlots = [
     { display: 'คาบ 0', value: '07:30-08:00' },
@@ -395,34 +465,29 @@ export default function BookingClient() {
               />
             </div>
             <div>
-              <label className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
+              <label htmlFor="period" className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
                 คาบเรียน
               </label>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
-                {timeSlots.map((slot) => (
-                  <motion.div
-                    key={slot.value}
-                    whileHover={{
-                      scale: 1.12,
-                      boxShadow: '0 0 18px rgba(99,102,241,0.18)',
-                      borderColor: '#6366f1',
-                      backgroundColor: '#e0e7ff',
-                    }}
-                    whileTap={{ scale: 0.97 }}
-                    className={`flex flex-col items-center justify-center w-20 h-20 rounded-2xl border-2 cursor-pointer transition-all duration-300 select-none
-                      ${period === slot.value
-                        ? 'bg-gradient-to-r from-indigo-600 to-red-600 text-white border-indigo-600 dark:border-indigo-500 shadow-xl'
-                        : 'bg-white dark:bg-gray-700/80 border-gray-300 dark:border-indigo-600 text-gray-950 dark:text-gray-100 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-lg'}
-                    `}
-                    onClick={() => setPeriod(slot.value)}
-                    style={{ minWidth: '80px', minHeight: '80px' }}
-                  >
-                    <span className="text-base font-bold leading-tight">
-                      {slot.display}
-                    </span>
-                    <span className={`text-xs mt-1 ${period === slot.value ? 'text-white/90' : 'text-gray-500 dark:text-gray-300'}`}>{slot.value}</span>
-                  </motion.div>
-                ))}
+              <div className="relative">
+                <motion.select
+                  whileHover={{ scale: 1.02 }}
+                  whileFocus={{ scale: 1.02, boxShadow: '0 0 15px rgba(99,102,241,0.3)' }}
+                  id="period"
+                  className="w-full px-4 py-3 pr-10 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 appearance-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
+                  value={period}
+                  onChange={(e) => setPeriod(e.target.value)}
+                  required
+                >
+                  <option value="">เลือกคาบเรียน</option>
+                  {timeSlots.map((slot) => (
+                    <option key={slot.value} value={slot.value}>
+                      {slot.display} ({slot.value})
+                    </option>
+                  ))}
+                </motion.select>
+                <span className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-300">
+                  ▼
+                </span>
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -437,11 +502,58 @@ export default function BookingClient() {
                   id="studentId"
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-indigo-600 bg-white dark:bg-gray-700/80 text-gray-950 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm"
                   value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    setStudentId(newValue);
+                    // Reset student data when ID changes
+                    if (newValue !== studentId) {
+                      setCanSubmit(false);
+                      setStudentProfile(null);
+                      setGrade('');
+                      setPrefix('');
+                      setFirstName('');
+                      setLastName('');
+                      lastLookedUpId.current = ''; // รีเซ็ต ID ที่ lookup แล้ว
+                    }
+                  }}
                   onBlur={handleStudentIdBlur}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleStudentIdBlur();
+                    }
+                  }}
+                  placeholder="กรอกรหัสนักเรียนแล้วกด Enter หรือคลิกออกจากช่อง"
                   required
-                  disabled={!canSubmit}
                 />
+                {/* Student lookup status */}
+                {studentId && (
+                  <div className="mt-2">
+                    {isLookingUp ? (
+                      <div className="flex items-center space-x-2 text-blue-600 dark:text-blue-400">
+                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                        </svg>
+                        <span className="text-sm">กำลังตรวจสอบข้อมูลนักเรียน...</span>
+                      </div>
+                    ) : studentProfile ? (
+                      <div className="flex items-center space-x-2 text-green-600 dark:text-green-400">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-sm">พบข้อมูลนักเรียน: {studentProfile?.firstName || ''} {studentProfile?.lastName || ''}</span>
+                      </div>
+                    ) : error && error.includes('ไม่พบข้อมูลนักเรียน') ? (
+                      <div className="flex items-center space-x-2 text-red-600 dark:text-red-400">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <span className="text-sm">ไม่พบข้อมูลนักเรียนในระบบ</span>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
               </div>
               <div>
                 <label htmlFor="grade" className="block mb-2 text-sm font-semibold text-gray-950 dark:text-gray-100">
@@ -611,7 +723,7 @@ export default function BookingClient() {
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
               whileTap={{ scale: 0.95 }}
               type="submit"
-              className="w-full bg-gradient-to-r from-indigo-600 to-red-600 dark:from-indigo-700 dark:to-red-700 hover:from-indigo-700 hover:to-red-700 dark:hover:from-indigo-800 dark:hover:to-red-800 text-white font-semibold py-3 px-4 rounded-lg shadow-lg hover:shadow-[0_0_15px_rgba(99,102,241,0.5)] transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full bg-gradient-to-r from-indigo-600 to-red-600 dark:from-indigo-700 dark:to-red-700 hover:from-indigo-700 hover:to-red-700 dark:hover:from-indigo-800 dark:hover:to-red-800 text-white font-semibold py-3 px-4 rounded-lg shadow-lg hover:shadow-[0_0_15px_rgba(99,102,241,0.5)] transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center [&>*]:!text-white"
               disabled={!canSubmit || isLoading || hasSubmitted}
             >
               {isLoading ? (

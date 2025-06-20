@@ -210,6 +210,14 @@ html:not(.dark) textarea:focus {
 .animate-comet { animation: comet 4.5s linear infinite; }
 .animate-meteor { animation: meteor 3.8s linear infinite; }
 
+/* Force white text for submit button */
+button[type="submit"] *,
+button[type="submit"] span,
+button[type="submit"] svg {
+  color: white !important;
+}
+
+/* Force white text for footer elements */
 footer *, footer .footer-text, footer [class*=footer-text] {
-  color: #fff !important;
+  color: white !important;
 }
