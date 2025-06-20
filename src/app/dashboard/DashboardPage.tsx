@@ -27,47 +27,61 @@ interface TimeSlot {
 
 // กำหนดสีสำหรับ light/dark mode
 const pieColorsLight = [
-  'rgba(99, 102, 241, 0.8)', // indigo
-  'rgba(236, 72, 153, 0.8)', // pink
-  'rgba(34, 197, 94, 0.8)', // green
-  'rgba(249, 115, 22, 0.8)', // orange
-  'rgba(168, 85, 247, 0.8)', // purple
-  'rgba(239, 68, 68, 0.8)', // red
-  'rgba(59, 130, 246, 0.8)', // blue
-  'rgba(147, 51, 234, 0.8)', // violet
-  'rgba(251, 191, 36, 0.8)', // yellow
-  'rgba(16, 185, 129, 0.8)', // emerald
-  'rgba(245, 101, 101, 0.8)', // red-400
-  'rgba(139, 92, 246, 0.8)', // violet-500
-  'rgba(14, 165, 233, 0.8)', // sky-500
+  'rgba(59, 130, 246, 0.8)', // blue-500
+  'rgba(239, 68, 68, 0.8)', // red-500
   'rgba(34, 197, 94, 0.8)', // green-500
-  'rgba(251, 146, 60, 0.8)', // orange-400
-  'rgba(6, 182, 212, 0.8)', // cyan-500
+  'rgba(245, 158, 11, 0.8)', // amber-500
   'rgba(168, 85, 247, 0.8)', // purple-500
-  'rgba(156, 163, 175, 0.8)', // gray-400
+  'rgba(236, 72, 153, 0.8)', // pink-500
+  'rgba(16, 185, 129, 0.8)', // emerald-500
+  'rgba(249, 115, 22, 0.8)', // orange-500
+  'rgba(139, 92, 246, 0.8)', // violet-500
+  'rgba(6, 182, 212, 0.8)', // cyan-500
+  'rgba(220, 38, 127, 0.8)', // rose-500
+  'rgba(14, 165, 233, 0.8)', // sky-500
+  'rgba(5, 150, 105, 0.8)', // emerald-600
+  'rgba(217, 119, 6, 0.8)', // amber-600
+  'rgba(147, 51, 234, 0.8)', // violet-600
+  'rgba(8, 145, 178, 0.8)', // cyan-600
+  'rgba(185, 28, 28, 0.8)', // red-700
+  'rgba(30, 64, 175, 0.8)', // blue-700
 ];
 const pieColorsDark = [
-  'rgba(165,180,252,0.7)', // indigo-200
-  'rgba(253,186,116,0.7)', // orange-200
-  'rgba(134,239,172,0.7)', // green-200
-  'rgba(251,207,232,0.7)', // pink-200
-  'rgba(192,132,252,0.7)', // purple-300
-  'rgba(254,202,202,0.7)', // red-200
-  'rgba(191,219,254,0.7)', // blue-200
-  'rgba(221,214,254,0.7)', // violet-200
-  'rgba(254,240,138,0.7)', // yellow-200
-  'rgba(167,243,208,0.7)', // emerald-200
-  'rgba(254,215,170,0.7)', // orange-200
-  'rgba(196,181,253,0.7)', // violet-200
-  'rgba(186,230,253,0.7)', // sky-200
-  'rgba(167,243,208,0.7)', // green-200
-  'rgba(254,215,170,0.7)', // orange-200
-  'rgba(165,243,252,0.7)', // cyan-200
-  'rgba(196,181,253,0.7)', // purple-200
-  'rgba(209,213,219,0.7)', // gray-300
+  'rgba(59, 130, 246, 0.7)', // blue-500
+  'rgba(239, 68, 68, 0.7)', // red-500
+  'rgba(34, 197, 94, 0.7)', // green-500
+  'rgba(245, 158, 11, 0.7)', // amber-500
+  'rgba(168, 85, 247, 0.7)', // purple-500
+  'rgba(236, 72, 153, 0.7)', // pink-500
+  'rgba(16, 185, 129, 0.7)', // emerald-500
+  'rgba(249, 115, 22, 0.7)', // orange-500
+  'rgba(139, 92, 246, 0.7)', // violet-500
+  'rgba(6, 182, 212, 0.7)', // cyan-500
+  'rgba(220, 38, 127, 0.7)', // rose-500
+  'rgba(14, 165, 233, 0.7)', // sky-500
+  'rgba(5, 150, 105, 0.7)', // emerald-600
+  'rgba(217, 119, 6, 0.7)', // amber-600
+  'rgba(147, 51, 234, 0.7)', // violet-600
+  'rgba(8, 145, 178, 0.7)', // cyan-600
+  'rgba(185, 28, 28, 0.7)', // red-700
+  'rgba(30, 64, 175, 0.7)', // blue-700
 ];
 const pieBorderLight = pieColorsLight.map(c => c.replace('0.8', '1'));
 const pieBorderDark = pieColorsDark.map(c => c.replace('0.7', '1'));
+
+// --- Extract class level (ม.1-ม.6) ---
+function extractClassLevel(name: string): string {
+  const match = name.match(/ม\.(\d)/);
+  return match ? `ม.${match[1]}` : 'ไม่ระบุ';
+}
+
+// --- Extract gender from prefix ---
+function extractGender(name: string): string {
+  if (!name) return 'ไม่ระบุ';
+  if (name.startsWith('เด็กชาย') || name.startsWith('นาย')) return 'ชาย';
+  if (name.startsWith('เด็กหญิง') || name.startsWith('นางสาว')) return 'หญิง';
+  return 'ไม่ระบุ';
+}
 
 export default function DashboardPage() {
   const [isDark, setIsDark] = useState<boolean>(false);
@@ -202,6 +216,131 @@ export default function DashboardPage() {
   const totalBookings = bookings.length;
   console.log('Total bookings:', totalBookings, 'Bookings:', bookings);
 
+  // Calculate growth rate (comparing with previous week)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const lastWeek = new Date(today);
+  lastWeek.setDate(today.getDate() - 7);
+  const twoWeeksAgo = new Date(today);
+  twoWeeksAgo.setDate(today.getDate() - 14);
+
+  const currentWeekBookings = bookings.filter(booking => {
+    const bookingDate = new Date(booking.date.split('/').reverse().join('-'));
+    return bookingDate >= lastWeek && bookingDate <= today;
+  }).length;
+
+  const previousWeekBookings = bookings.filter(booking => {
+    const bookingDate = new Date(booking.date.split('/').reverse().join('-'));
+    return bookingDate >= twoWeeksAgo && bookingDate < lastWeek;
+  }).length;
+
+  const growthRate = previousWeekBookings > 0 
+    ? ((currentWeekBookings - previousWeekBookings) / previousWeekBookings * 100).toFixed(1)
+    : currentWeekBookings > 0 ? '100' : '0';
+
+  // Calculate peak hours
+  const hourlyData = bookings.reduce((acc: Record<string, number>, booking: Booking) => {
+    const timeSlot = booking.timeSlot;
+    if (timeSlot) {
+      const hour = timeSlot.split('-')[0].split(':')[0];
+      acc[hour] = (acc[hour] || 0) + 1;
+    }
+    return acc;
+  }, {});
+
+  const peakHour = Object.entries(hourlyData).reduce((a, b) => hourlyData[a[0]] > hourlyData[b[0]] ? a : b, ['', 0]);
+
+  // Calculate most common symptoms
+  const symptomCategories = [
+    'ปวดหัว',
+    'ไข้',
+    'ปวดท้อง',
+    'ปวดท้องประจำเดือน',
+    'เจ็บคอ',
+    'บาดเจ็บจากกีฬา',
+    'บาดเจ็บ',
+    'เป็นลม',
+    'เวียนหัว',
+    'คลื่นไส้/อาเจียน',
+    'ท้องเสีย',
+    'ท้องผูก',
+    'ปวดฟัน',
+    'ปวดหู',
+    'ปวดหลัง',
+    'ปวดข้อ',
+    'แผล/เลือดออก',
+    'หายใจลำบาก',
+    'แพ้/ผื่นคัน',
+    'ปวดตา/สายตา',
+    'เครียด/วิตกกังวล',
+    'อื่นๆ',
+  ];
+  const symptomCounts = bookings.reduce((acc: Record<string, number>, booking: Booking) => {
+    let category = 'อื่นๆ';
+    if (booking.symptoms && typeof booking.symptoms === 'string') {
+      const s = booking.symptoms.trim().toLowerCase();
+      if (s.includes('ปวดหัว') || s.includes('headache')) category = 'ปวดหัว';
+      else if (s.includes('ไข้') || s.includes('fever')) category = 'ไข้';
+      else if (s.includes('ปวดท้องประจำเดือน')) category = 'ปวดท้องประจำเดือน';
+      else if (s.includes('ปวดท้อง')) category = 'ปวดท้อง';
+      else if (s.includes('เจ็บคอ') || s.includes('throat')) category = 'เจ็บคอ';
+      else if (s.includes('บาดเจ็บจากกีฬา')) category = 'บาดเจ็บจากกีฬา';
+      else if (s.includes('บาดเจ็บ') || s.includes('injury') || s.includes('หกล้ม') || s.includes('ชน')) category = 'บาดเจ็บ';
+      else if (s.includes('เป็นลม')) category = 'เป็นลม';
+      else if (s.includes('เวียนหัว') || s.includes('dizzy')) category = 'เวียนหัว';
+      else if (s.includes('คลื่นไส้') || s.includes('อาเจียน') || s.includes('nausea') || s.includes('vomit')) category = 'คลื่นไส้/อาเจียน';
+      else if (s.includes('ท้องเสีย') || s.includes('diarrhea')) category = 'ท้องเสีย';
+      else if (s.includes('ท้องผูก') || s.includes('constipation')) category = 'ท้องผูก';
+      else if (s.includes('ปวดฟัน') || s.includes('toothache')) category = 'ปวดฟัน';
+      else if (s.includes('ปวดหู') || s.includes('earache')) category = 'ปวดหู';
+      else if (s.includes('ปวดหลัง') || s.includes('back pain')) category = 'ปวดหลัง';
+      else if (s.includes('ปวดข้อ') || s.includes('joint pain')) category = 'ปวดข้อ';
+      else if (s.includes('แผล') || s.includes('เลือด') || s.includes('wound') || s.includes('bleeding')) category = 'แผล/เลือดออก';
+      else if (s.includes('หายใจลำบาก') || s.includes('breathing')) category = 'หายใจลำบาก';
+      else if (s.includes('แพ้') || s.includes('ผื่น') || s.includes('คัน') || s.includes('allergy') || s.includes('rash')) category = 'แพ้/ผื่นคัน';
+      else if (s.includes('ปวดตา') || s.includes('สายตา')) category = 'ปวดตา/สายตา';
+      else if (s.includes('เครียด') || s.includes('วิตก')) category = 'เครียด/วิตกกังวล';
+    }
+    acc[category] = (acc[category] || 0) + 1;
+    return acc;
+  }, {});
+  console.log('Symptom Counts:', symptomCounts);
+  const symptomData = {
+    labels: symptomCategories,
+    datasets: [
+      {
+        label: 'การบันทึกตามอาการ',
+        data: symptomCategories.map((category) => symptomCounts[category] || 0),
+        backgroundColor: isDark ? pieColorsDark : pieColorsLight,
+        borderColor: isDark ? pieBorderDark : pieBorderLight,
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  // Calculate average daily bookings
+  const uniqueDates = [...new Set(bookings.map(booking => booking.date))];
+  const averageDailyBookings = uniqueDates.length > 0 ? (totalBookings / uniqueDates.length).toFixed(1) : '0';
+
+  // Calculate weekly trend data
+  const weeklyTrendData = {
+    labels: ['2 สัปดาห์ที่แล้ว', 'สัปดาห์ที่แล้ว', 'สัปดาห์นี้'],
+    datasets: [
+      {
+        label: 'จำนวนการใช้งาน',
+        data: [
+          previousWeekBookings,
+          previousWeekBookings,
+          currentWeekBookings
+        ],
+        backgroundColor: isDark ? 'rgba(59, 130, 246, 0.7)' : 'rgba(59, 130, 246, 0.8)',
+        borderColor: isDark ? 'rgba(59, 130, 246, 1)' : 'rgba(59, 130, 246, 1)',
+        borderWidth: 2,
+        tension: 0.4,
+      },
+    ],
+  };
+
   // Bookings by time slot
   const timeSlotCounts = bookings.reduce((acc: Record<string, number>, booking: Booking) => {
     const display = timeSlots.find((slot) => slot.value === booking.timeSlot)?.display || booking.timeSlot || 'ไม่ระบุ';
@@ -222,87 +361,19 @@ export default function DashboardPage() {
     ],
   };
 
-  // Bookings by symptom category
-  const symptomCategories = [
-    'ปวดหัว', 'ไข้', 'ปวดท้อง', 'เจ็บคอ', 'บาดเจ็บ', 'เวียนหัว', 'คลื่นไส้/อาเจียน',
-    'ท้องเสีย', 'ท้องผูก', 'ปวดฟัน', 'ปวดหู', 'ปวดหลัง', 'ปวดข้อ', 'แผล/เลือดออก',
-    'หายใจลำบาก', 'แพ้/ผื่นคัน', 'อื่นๆ'
-  ];
-  const symptomCounts = bookings.reduce((acc: Record<string, number>, booking: Booking) => {
-    let category = 'อื่นๆ';
-    if (booking.symptoms && typeof booking.symptoms === 'string') {
-      const symptomsLower = booking.symptoms.trim().toLowerCase();
-      console.log('Processing symptom:', booking.symptoms, 'Lowercase:', symptomsLower);
-      
-      // ตรวจสอบอาการต่างๆ
-      if (symptomsLower.includes('ปวดหัว') || symptomsLower.includes('headache') || symptomsLower.includes('ปวดศีรษะ')) {
-        category = 'ปวดหัว';
-      } else if (symptomsLower.includes('ไข้') || symptomsLower.includes('fever') || symptomsLower.includes('ร้อน')) {
-        category = 'ไข้';
-      } else if (symptomsLower.includes('ปวดท้อง') || symptomsLower.includes('stomach') || symptomsLower.includes('ท้อง')) {
-        category = 'ปวดท้อง';
-      } else if (symptomsLower.includes('เจ็บคอ') || symptomsLower.includes('throat') || symptomsLower.includes('คอ')) {
-        category = 'เจ็บคอ';
-      } else if (symptomsLower.includes('บาดเจ็บ') || symptomsLower.includes('injury') || symptomsLower.includes('หกล้ม') || symptomsLower.includes('ชน')) {
-        category = 'บาดเจ็บ';
-      } else if (symptomsLower.includes('เวียนหัว') || symptomsLower.includes('dizzy') || symptomsLower.includes('มึน')) {
-        category = 'เวียนหัว';
-      } else if (symptomsLower.includes('คลื่นไส้') || symptomsLower.includes('อาเจียน') || symptomsLower.includes('nausea') || symptomsLower.includes('vomit')) {
-        category = 'คลื่นไส้/อาเจียน';
-      } else if (symptomsLower.includes('ท้องเสีย') || symptomsLower.includes('diarrhea') || symptomsLower.includes('ถ่ายเหลว')) {
-        category = 'ท้องเสีย';
-      } else if (symptomsLower.includes('ท้องผูก') || symptomsLower.includes('constipation') || symptomsLower.includes('ถ่ายยาก')) {
-        category = 'ท้องผูก';
-      } else if (symptomsLower.includes('ปวดฟัน') || symptomsLower.includes('toothache') || symptomsLower.includes('ฟัน')) {
-        category = 'ปวดฟัน';
-      } else if (symptomsLower.includes('ปวดหู') || symptomsLower.includes('earache') || symptomsLower.includes('หู')) {
-        category = 'ปวดหู';
-      } else if (symptomsLower.includes('ปวดหลัง') || symptomsLower.includes('back pain') || symptomsLower.includes('หลัง')) {
-        category = 'ปวดหลัง';
-      } else if (symptomsLower.includes('ปวดข้อ') || symptomsLower.includes('joint pain') || symptomsLower.includes('ข้อ')) {
-        category = 'ปวดข้อ';
-      } else if (symptomsLower.includes('แผล') || symptomsLower.includes('เลือด') || symptomsLower.includes('wound') || symptomsLower.includes('bleeding')) {
-        category = 'แผล/เลือดออก';
-      } else if (symptomsLower.includes('หายใจลำบาก') || symptomsLower.includes('breathing') || symptomsLower.includes('หอบ')) {
-        category = 'หายใจลำบาก';
-      } else if (symptomsLower.includes('แพ้') || symptomsLower.includes('ผื่น') || symptomsLower.includes('คัน') || symptomsLower.includes('allergy') || symptomsLower.includes('rash')) {
-        category = 'แพ้/ผื่นคัน';
-      }
-      
-      console.log('Assigned category:', category);
-    } else {
-      console.warn('Invalid or missing symptoms:', booking.symptoms);
-    }
-    acc[category] = (acc[category] || 0) + 1;
-    return acc;
-  }, {});
-  console.log('Symptom Counts:', symptomCounts);
-  const symptomData = {
-    labels: symptomCategories,
-    datasets: [
-      {
-        label: 'การบันทึกตามอาการ',
-        data: symptomCategories.map((category) => symptomCounts[category] || 0),
-        backgroundColor: isDark ? pieColorsDark : pieColorsLight,
-        borderColor: isDark ? pieBorderDark : pieBorderLight,
-        borderWidth: 1,
-      },
-    ],
-  };
-
   // Bookings by date
-  const today = new Date();
-  today.setHours(0, 0, 0, 0); // Set to start of day
-  const sevenDaysAgo = new Date(today);
-  sevenDaysAgo.setDate(today.getDate() - 6); // 7 days total (today + 6 days back)
-  console.log('Today:', today.toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok' }));
+  const todayDate = new Date();
+  todayDate.setHours(0, 0, 0, 0); // Set to start of day
+  const sevenDaysAgo = new Date(todayDate);
+  sevenDaysAgo.setDate(todayDate.getDate() - 6); // 7 days total (today + 6 days back)
+  console.log('Today:', todayDate.toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok' }));
   console.log('Seven days ago:', sevenDaysAgo.toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok' }));
 
   // Generate all dates in the last 7 days for labels
   const dateRange: string[] = [];
   for (let i = 6; i >= 0; i--) { // Start from 6 days ago, go to today
-    const date = new Date(today);
-    date.setDate(today.getDate() - i);
+    const date = new Date(todayDate);
+    date.setDate(todayDate.getDate() - i);
     dateRange.push(date.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Bangkok' }));
   }
   console.log('Date Range (last 7 days):', dateRange);
@@ -348,6 +419,50 @@ export default function DashboardPage() {
       },
     ],
   };
+
+  // --- Prepare class level data ---
+  const classLevelCounts = bookings.reduce((acc: Record<string, number>, booking: Booking) => {
+    const level = extractClassLevel(booking.firstName || '');
+    acc[level] = (acc[level] || 0) + 1;
+    return acc;
+  }, {});
+  const classLevelLabels = ['ม.1', 'ม.2', 'ม.3', 'ม.4', 'ม.5', 'ม.6', 'ไม่ระบุ'];
+  const classLevelData = {
+    labels: classLevelLabels,
+    datasets: [
+      {
+        label: 'ระดับชั้น',
+        data: classLevelLabels.map(l => classLevelCounts[l] || 0),
+        backgroundColor: isDark ? pieColorsDark : pieColorsLight,
+        borderColor: isDark ? pieBorderDark : pieBorderLight,
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  // --- Prepare gender data ---
+  const genderCounts = bookings.reduce((acc: Record<string, number>, booking: Booking) => {
+    const gender = extractGender(booking.firstName || '');
+    acc[gender] = (acc[gender] || 0) + 1;
+    return acc;
+  }, {});
+  const genderLabels = ['ชาย', 'หญิง', 'ไม่ระบุ'];
+  const genderData = {
+    labels: genderLabels,
+    datasets: [
+      {
+        label: 'เพศ',
+        data: genderLabels.map(g => genderCounts[g] || 0),
+        backgroundColor: isDark ? pieColorsDark : pieColorsLight,
+        borderColor: isDark ? pieBorderDark : pieBorderLight,
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  // อาการที่พบบ่อยจริง
+  const mostCommonSymptom = Object.entries(symptomCounts).sort(([,a],[,b])=>b-a)[0]?.[0] || 'ไม่มีข้อมูล';
+  const mostCommonSymptomCount = symptomCounts[mostCommonSymptom] || 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-100 via-indigo-100 to-red-100 dark:from-indigo-950 dark:via-gray-900 dark:to-red-950 transition-colors duration-700">
@@ -469,7 +584,7 @@ export default function DashboardPage() {
             แดชบอร์ด iMedReserve
           </h2>
           <p className="text-center text-base sm:text-lg text-gray-950 dark:text-gray-100 mb-4 sm:mb-6 px-2">
-            ข้อมูลการใช้ห้องพยาบาล วันที่ {today.toLocaleDateString('th-TH', {
+            ข้อมูลการใช้ห้องพยาบาล วันที่ {todayDate.toLocaleDateString('th-TH', {
               day: '2-digit',
               month: '2-digit',
               year: 'numeric',
@@ -511,7 +626,7 @@ export default function DashboardPage() {
                 <h3 className="text-base sm:text-lg font-semibold text-gray-950 dark:text-gray-100 mb-2">จำนวนการใช้ทั้งหมด</h3>
                 <p className="text-3xl sm:text-4xl font-bold text-indigo-600 dark:text-indigo-400">{totalBookings}</p>
                 <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-2 px-2">
-                  ข้อมูลการใช้ทั้งหมดในระบบจนถึงวันที่ {today.toLocaleDateString('th-TH', {
+                  ข้อมูลการใช้ทั้งหมดในระบบจนถึงวันที่ {todayDate.toLocaleDateString('th-TH', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric',
@@ -519,6 +634,99 @@ export default function DashboardPage() {
                   })}
                 </p>
               </motion.div>
+
+              {/* Key Metrics Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                {/* Growth Rate */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                  className="p-4 sm:p-6 rounded-xl bg-white border border-gray-200/70 shadow-lg hover:shadow-xl transition-all duration-300"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">อัตราการเติบโต</p>
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                        {parseFloat(growthRate) >= 0 ? '+' : ''}{growthRate}%
+                      </p>
+                    </div>
+                    <div className={`p-2 rounded-full ${parseFloat(growthRate) >= 0 ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
+                      <svg className={`w-6 h-6 ${parseFloat(growthRate) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={parseFloat(growthRate) >= 0 ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" : "M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"} />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">เทียบกับสัปดาห์ที่แล้ว</p>
+                </motion.div>
+
+                {/* Average Daily */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="p-4 sm:p-6 rounded-xl bg-white border border-gray-200/70 shadow-lg hover:shadow-xl transition-all duration-300"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">เฉลี่ยต่อวัน</p>
+                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{averageDailyBookings}</p>
+                    </div>
+                    <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                      <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">การใช้งานเฉลี่ย</p>
+                </motion.div>
+
+                {/* Peak Hour */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                  className="p-4 sm:p-6 rounded-xl bg-white border border-gray-200/70 shadow-lg hover:shadow-xl transition-all duration-300"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">ช่วงเวลาที่คึกคัก</p>
+                      <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{peakHour[0]}:00</p>
+                    </div>
+                    <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/30">
+                      <svg className="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{peakHour[1]} การใช้งาน</p>
+                </motion.div>
+
+                {/* Top Symptom */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="p-4 sm:p-6 rounded-xl bg-white border border-gray-200/70 shadow-lg hover:shadow-xl transition-all duration-300"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">อาการที่พบบ่อย</p>
+                      <p className="text-lg font-bold text-purple-600 dark:text-purple-400 truncate">{mostCommonSymptom}</p>
+                    </div>
+                    <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/30">
+                      <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{mostCommonSymptomCount} ครั้ง</p>
+                </motion.div>
+              </div>
 
               {/* Charts */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
@@ -543,14 +751,15 @@ export default function DashboardPage() {
                           legend: {
                             position: 'bottom',
                             labels: {
-                              color: isDark ? '#fff' : '#1F2937',
+                              color: isDark ? '#fff' : '#000',
                               font: { size: window.innerWidth < 640 ? 12 : 14 },
                               padding: window.innerWidth < 640 ? 15 : 20,
                             },
                           },
                           tooltip: {
                             backgroundColor: isDark ? 'rgba(30,41,59,0.95)' : 'rgba(255,255,255,0.95)',
-                            bodyColor: isDark ? '#fff' : '#1F2937',
+                            titleColor: isDark ? '#fff' : '#000',
+                            bodyColor: isDark ? '#fff' : '#000',
                             callbacks: {
                               label: (context) => `${context.label}: ${context.raw} การใช้งาน`,
                             },
@@ -582,14 +791,25 @@ export default function DashboardPage() {
                           legend: {
                             position: 'bottom',
                             labels: {
-                              color: isDark ? '#fff' : '#1F2937',
-                              font: { size: window.innerWidth < 640 ? 12 : 14 },
-                              padding: window.innerWidth < 640 ? 15 : 20,
+                              color: isDark ? '#fff' : '#000',
+                              font: { 
+                                size: window.innerWidth < 640 ? 10 : 11,
+                                weight: 'normal'
+                              },
+                              padding: window.innerWidth < 640 ? 8 : 12,
+                              usePointStyle: true,
+                              pointStyle: 'circle',
+                              boxWidth: window.innerWidth < 640 ? 8 : 10,
+                              boxHeight: window.innerWidth < 640 ? 8 : 10,
                             },
+                            align: 'start',
+                            maxHeight: window.innerWidth < 640 ? 120 : 150,
+                            maxWidth: window.innerWidth < 640 ? 200 : 250,
                           },
                           tooltip: {
                             backgroundColor: isDark ? 'rgba(30,41,59,0.95)' : 'rgba(255,255,255,0.95)',
-                            bodyColor: isDark ? '#fff' : '#1F2937',
+                            titleColor: isDark ? '#fff' : '#000',
+                            bodyColor: isDark ? '#fff' : '#000',
                             callbacks: {
                               label: (context) => `${context.label}: ${context.raw} การใช้งาน`,
                             },
@@ -621,13 +841,14 @@ export default function DashboardPage() {
                           legend: {
                             position: 'top',
                             labels: {
-                              color: isDark ? '#fff' : '#1F2937',
+                              color: isDark ? '#fff' : '#000',
                               font: { size: window.innerWidth < 640 ? 12 : 14 },
                             },
                           },
                           tooltip: {
                             backgroundColor: isDark ? 'rgba(30,41,59,0.95)' : 'rgba(255,255,255,0.95)',
-                            bodyColor: isDark ? '#fff' : '#1F2937',
+                            titleColor: isDark ? '#fff' : '#000',
+                            bodyColor: isDark ? '#fff' : '#000',
                             callbacks: {
                               label: (context) => `${context.raw} การใช้ห้องพยาบาล`,
                             },
@@ -636,7 +857,7 @@ export default function DashboardPage() {
                         scales: {
                           x: {
                             ticks: {
-                              color: isDark ? '#fff' : '#1F2937',
+                              color: isDark ? '#fff' : '#000',
                               font: { size: window.innerWidth < 640 ? 10 : 12 },
                             },
                             grid: {
@@ -645,7 +866,7 @@ export default function DashboardPage() {
                           },
                           y: {
                             ticks: {
-                              color: isDark ? '#fff' : '#1F2937',
+                              color: isDark ? '#fff' : '#000',
                               font: { size: window.innerWidth < 640 ? 10 : 12 },
                               stepSize: barStepSize,
                             },
