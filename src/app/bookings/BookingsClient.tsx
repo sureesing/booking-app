@@ -252,14 +252,14 @@ export default function BookingsClient() {
       </motion.nav>
 
       {/* Main Content */}
-      <div className="flex-grow flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-20 pb-10 transition-colors duration-700">
+      <div className="flex-grow flex items-center justify-center px-2 sm:px-4 md:px-6 lg:px-8 pt-16 sm:pt-20 pb-6 sm:pb-10 transition-colors duration-700">
         <motion.div
           initial={{ opacity: 0, y: 50, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="w-full max-w-4xl p-8 sm:p-10 rounded-3xl bg-white/90 dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500"
+          className="w-full max-w-4xl p-3 sm:p-6 md:p-8 lg:p-10 rounded-2xl sm:rounded-3xl bg-white/90 dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500"
         >
-          <h2 className="text-4xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400 mb-8 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400 mb-4 sm:mb-6 md:mb-8 tracking-tight">
             ประวัติการบันทึก
           </h2>
           <AnimatePresence>
@@ -269,27 +269,27 @@ export default function BookingsClient() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3 }}
-                className="text-center text-sm text-red-600 dark:text-red-400 mb-6 bg-red-100/50 dark:bg-red-900/50 rounded-lg p-3 shadow-sm"
+                className="text-center text-sm text-red-600 dark:text-red-400 mb-4 sm:mb-6 bg-red-100/50 dark:bg-red-900/50 rounded-lg p-3 shadow-sm mx-2"
               >
                 {error}
               </motion.p>
             )}
           </AnimatePresence>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
             <div className="relative flex-1">
               <input
                 type="text"
                 placeholder="ค้นหาการบันทึกข้อมูล..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full pl-10 pr-4 py-2 sm:py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm sm:text-base"
               />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
             </div>
             <select
               value={filterTimeSlot}
               onChange={(e) => setFilterTimeSlot(e.target.value)}
-              className="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm sm:text-base"
             >
               {timeSlots.map((slot) => (
                 <option key={slot.value} value={slot.value}>
@@ -299,48 +299,52 @@ export default function BookingsClient() {
             </select>
           </div>
           {isLoading ? (
-            <div className="flex justify-center items-center h-64">
+            <div className="flex justify-center items-center h-48 sm:h-64">
               <svg className="animate-spin h-8 w-8 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
             </div>
           ) : filteredBookings.length === 0 ? (
-            <p className="text-center text-gray-600 dark:text-gray-400">
+            <p className="text-center text-gray-600 dark:text-gray-400 px-2">
               ไม่พบประวัติการบันทึกข้อมูล
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-gray-100 dark:bg-gray-700/50">
-                    <th className="p-4 text-sm font-semibold text-gray-950 dark:text-gray-100">ชื่อ</th>
-                    <th className="p-4 text-sm font-semibold text-gray-950 dark:text-gray-100">นามสกุล</th>
-                    <th className="p-4 text-sm font-semibold text-gray-950 dark:text-gray-100">เวลา</th>
-                    <th className="p-4 text-sm font-semibold text-gray-950 dark:text-gray-100">อาการ</th>
-                    <th className="p-4 text-sm font-semibold text-gray-950 dark:text-gray-100">การรักษา</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredBookings.map((booking, index) => (
-                    <motion.tr
-                      key={index}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
-                      className="border-t border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
-                    >
-                      <td className="p-4 text-sm text-gray-950 dark:text-gray-100">{booking.firstName || 'N/A'}</td>
-                      <td className="p-4 text-sm text-gray-950 dark:text-gray-100">{booking.lastName || 'N/A'}</td>
-                      <td className="p-4 text-sm text-gray-950 dark:text-gray-100">
-                        {timeSlots.find((slot) => slot.value === booking.timeSlot)?.display || booking.timeSlot || 'N/A'}
-                      </td>
-                      <td className="p-4 text-sm text-gray-950 dark:text-gray-100">{booking.symptoms || 'N/A'}</td>
-                      <td className="p-4 text-sm text-gray-950 dark:text-gray-100">{booking.treatment || 'N/A'}</td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="overflow-x-auto -mx-2 sm:mx-0">
+              <div className="min-w-full inline-block align-middle">
+                <div className="overflow-hidden border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-100 dark:bg-gray-700/50">
+                      <tr>
+                        <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-950 dark:text-gray-100 uppercase tracking-wider">ชื่อ</th>
+                        <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-950 dark:text-gray-100 uppercase tracking-wider">นามสกุล</th>
+                        <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-950 dark:text-gray-100 uppercase tracking-wider">เวลา</th>
+                        <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-950 dark:text-gray-100 uppercase tracking-wider">อาการ</th>
+                        <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-950 dark:text-gray-100 uppercase tracking-wider">การรักษา</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                      {filteredBookings.map((booking, index) => (
+                        <motion.tr
+                          key={index}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          className="hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors duration-200"
+                        >
+                          <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-950 dark:text-gray-100 whitespace-nowrap">{booking.firstName || 'N/A'}</td>
+                          <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-950 dark:text-gray-100 whitespace-nowrap">{booking.lastName || 'N/A'}</td>
+                          <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-950 dark:text-gray-100 whitespace-nowrap">
+                            {timeSlots.find((slot) => slot.value === booking.timeSlot)?.display || booking.timeSlot || 'N/A'}
+                          </td>
+                          <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-950 dark:text-gray-100 max-w-xs truncate">{booking.symptoms || 'N/A'}</td>
+                          <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-950 dark:text-gray-100 max-w-xs truncate">{booking.treatment || 'N/A'}</td>
+                        </motion.tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
         </motion.div>
