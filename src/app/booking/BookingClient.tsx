@@ -423,7 +423,20 @@ export default function BookingClient() {
           transition={{ duration: 0.8, ease: 'easeOut' }}
           className="w-full max-w-2xl p-8 sm:p-10 rounded-3xl bg-white dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500"
           style={{ backgroundColor: 'white' }}
-        >
+        > <div className="flex justify-center mb-4">
+            <motion.img
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+              src="/logo.png"
+              alt="โรงเรียนสิงห์บุรี"
+              className="w-20 h-20 sm:w-24 sm:h-24 object-contain"
+              onError={(e) => {
+                // Hide the image if it fails to load
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          </div>
           <h2 className="text-4xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400 mb-4 tracking-tight">
             โรงเรียนสิงห์บุรี
           </h2>
@@ -431,7 +444,7 @@ export default function BookingClient() {
             ระบบบันทึกนักเรียนเข้ารับบริการห้องพยาบาล
           </h3>
           <p className="text-center text-lg text-gray-950 dark:text-gray-100 mb-8">
-            ปีการศึกษา 2567
+            ปีการศึกษา 2568
           </p>
           <AnimatePresence>
             {error && (

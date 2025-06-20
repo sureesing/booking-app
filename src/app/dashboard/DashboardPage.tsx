@@ -148,7 +148,7 @@ export default function DashboardPage() {
           console.log('Mapped bookings:', mappedBookings);
           setBookings(mappedBookings);
         } else {
-          setError(data.message || 'ไม่สามารถดึงข้อมูลการจองได้');
+          setError(data.message || 'ไม่สามารถดึงข้อมูลได้');
           setBookings([]);
         }
       } catch (err) {
@@ -195,7 +195,7 @@ export default function DashboardPage() {
     labels: Object.keys(timeSlotCounts),
     datasets: [
       {
-        label: 'การจองตามช่วงเวลา',
+        label: 'ข้อมูลตามช่วงเวลา',
         data: Object.values(timeSlotCounts),
         backgroundColor: isDark ? pieColorsDark : pieColorsLight,
         borderColor: isDark ? pieBorderDark : pieBorderLight,
@@ -234,7 +234,7 @@ export default function DashboardPage() {
     labels: symptomCategories,
     datasets: [
       {
-        label: 'การจองตามอาการ',
+        label: 'การบันทึกตามอาการ',
         data: symptomCategories.map((category) => symptomCounts[category] || 0),
         backgroundColor: isDark ? pieColorsDark : pieColorsLight,
         borderColor: isDark ? pieBorderDark : pieBorderLight,
@@ -293,7 +293,7 @@ export default function DashboardPage() {
     labels: dateRange,
     datasets: [
       {
-        label: 'การจองตามวัน',
+        label: 'ข้อมูลการใช้งานตามวัน',
         data: dateRange.map((date) => dailyCounts[date] || 0),
         backgroundColor: isDark ? 'rgba(165,180,252,0.7)' : 'rgba(99, 102, 241, 0.8)',
         borderColor: isDark ? 'rgba(165,180,252,1)' : 'rgba(99, 102, 241, 1)',
@@ -325,7 +325,7 @@ export default function DashboardPage() {
               className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
             >
               <Calendar className="w-4 h-4" />
-              <span>จอง</span>
+              <span>นักเรียนบันทึกข้อมูล</span>
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
@@ -334,7 +334,7 @@ export default function DashboardPage() {
               className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
             >
               <Calendar className="w-4 h-4" />
-              <span>ประวัติการจอง</span>
+              <span>ประวัติการบันทึก</span>
             </motion.button>
             <label className="relative inline-flex items-center cursor-pointer group">
               <input type="checkbox" checked={isDark} onChange={handleToggle} className="sr-only peer" />
@@ -382,7 +382,7 @@ export default function DashboardPage() {
                   className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
                 >
                   <Calendar className="w-4 h-4" />
-                  <span>จอง</span>
+                  <span>นักเรียนบันทึกข้อมูล</span>
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -391,7 +391,7 @@ export default function DashboardPage() {
                   className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
                 >
                   <Calendar className="w-4 h-4" />
-                  <span>ประวัติการจอง</span>
+                  <span>ประวัติการบันทึก</span>
                 </motion.button>
                 <label className="relative inline-flex items-center cursor-pointer group">
                   <input type="checkbox" checked={isDark} onChange={handleToggle} className="sr-only peer" />
@@ -422,7 +422,7 @@ export default function DashboardPage() {
             แดชบอร์ด iMedReserve
           </h2>
           <p className="text-center text-lg text-gray-950 dark:text-gray-100 mb-6">
-            สถิติการจองห้องพยาบาล วันที่ {today.toLocaleDateString('th-TH', {
+            ข้อมูลการใช้ห้องพยาบาล วันที่ {today.toLocaleDateString('th-TH', {
               day: '2-digit',
               month: '2-digit',
               year: 'numeric',
@@ -450,7 +450,7 @@ export default function DashboardPage() {
               </svg>
             </div>
           ) : bookings.length === 0 ? (
-            <p className="text-center text-gray-600 dark:text-gray-400">ไม่พบข้อมูลการจอง</p>
+            <p className="text-center text-gray-600 dark:text-gray-400">ไม่พบข้อมูลการใช้บริการ</p>
           ) : (
             <div className="space-y-10">
               {/* Summary Card */}
@@ -461,10 +461,10 @@ export default function DashboardPage() {
                 className="p-8 rounded-2xl bg-white border border-gray-200/70 shadow-lg hover:shadow-2xl transition-all duration-300 text-center"
                 whileHover={{ scale: 1.025, boxShadow: '0 8px 32px 0 rgba(99,102,241,0.12)' }}
               >
-                <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100 mb-2">จำนวนการจองทั้งหมด</h3>
+                <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100 mb-2">จำนวนการใช้ทั้งหมด</h3>
                 <p className="text-4xl font-bold text-indigo-600 dark:text-indigo-400">{totalBookings}</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                  การจองทั้งหมดในระบบจนถึงวันที่ {today.toLocaleDateString('th-TH', {
+                  ข้อมูลการใช้ทั้งหมดในระบบจนถึงวันที่ {today.toLocaleDateString('th-TH', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric',
@@ -484,7 +484,7 @@ export default function DashboardPage() {
                   whileHover={{ scale: 1.02, boxShadow: '0 8px 32px 0 rgba(99,102,241,0.10)' }}
                 >
                   <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100 mb-4 text-center">
-                    การจองตามช่วงเวลา
+                    ข้อมูลตามช่วงเวลา
                   </h3>
                   <div className="max-w-sm mx-auto">
                     <Pie
@@ -504,7 +504,7 @@ export default function DashboardPage() {
                             backgroundColor: isDark ? 'rgba(30,41,59,0.95)' : 'rgba(255,255,255,0.95)',
                             bodyColor: isDark ? '#fff' : '#1F2937',
                             callbacks: {
-                              label: (context) => `${context.label}: ${context.raw} การจอง`,
+                              label: (context) => `${context.label}: ${context.raw} การใช้งาน`,
                             },
                           },
                         },
@@ -522,7 +522,7 @@ export default function DashboardPage() {
                   whileHover={{ scale: 1.02, boxShadow: '0 8px 32px 0 rgba(99,102,241,0.10)' }}
                 >
                   <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100 mb-4 text-center">
-                    การจองตามอาการ
+                    ข้อมูลตามอาการ
                   </h3>
                   <div className="max-w-sm mx-auto">
                     <Pie
@@ -542,7 +542,7 @@ export default function DashboardPage() {
                             backgroundColor: isDark ? 'rgba(30,41,59,0.95)' : 'rgba(255,255,255,0.95)',
                             bodyColor: isDark ? '#fff' : '#1F2937',
                             callbacks: {
-                              label: (context) => `${context.label}: ${context.raw} การจอง`,
+                              label: (context) => `${context.label}: ${context.raw} การใช้งาน`,
                             },
                           },
                         },
@@ -560,7 +560,7 @@ export default function DashboardPage() {
                   whileHover={{ scale: 1.015, boxShadow: '0 8px 32px 0 rgba(99,102,241,0.10)' }}
                 >
                   <h3 className="text-lg font-semibold text-gray-950 dark:text-gray-100 mb-4 text-center">
-                    การจองตามวันที่ (7 วันล่าสุด)
+                    ข้อมูลตามวันที่ (7 วันล่าสุด)
                   </h3>
                   <div className="max-w-3xl mx-auto">
                     <Bar
@@ -579,7 +579,7 @@ export default function DashboardPage() {
                             backgroundColor: isDark ? 'rgba(30,41,59,0.95)' : 'rgba(255,255,255,0.95)',
                             bodyColor: isDark ? '#fff' : '#1F2937',
                             callbacks: {
-                              label: (context) => `${context.raw} การจอง`,
+                              label: (context) => `${context.raw} การใช้ห้องพยาบาล`,
                             },
                           },
                         },

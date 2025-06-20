@@ -82,7 +82,7 @@ export default function BookingsClient() {
           })) : [];
           setBookings(mappedBookings);
         } else {
-          setError(data.message || 'ไม่สามารถดึงข้อมูลการจองได้');
+          setError(data.message || 'ไม่สามารถดึงข้อมูลได้');
         }
       } catch (err: unknown) {
         console.error('Fetch error:', err);
@@ -166,7 +166,7 @@ export default function BookingsClient() {
               className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
             >
               <Calendar className="w-4 h-4" />
-              <span>จอง</span>
+              <span>นักเรียนบันทึกข้อมูล</span>
             </motion.button>
             <label className="relative inline-flex items-center cursor-pointer group">
               <input
@@ -225,7 +225,7 @@ export default function BookingsClient() {
                   className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
                 >
                   <Calendar className="w-4 h-4" />
-                  <span>จอง</span>
+                  <span>นักเรียนบันทึกข้อมูล</span>
                 </motion.button>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -260,7 +260,7 @@ export default function BookingsClient() {
           className="w-full max-w-4xl p-8 sm:p-10 rounded-3xl bg-white/90 dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500"
         >
           <h2 className="text-4xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400 mb-8 tracking-tight">
-            ประวัติการจอง
+            ประวัติการบันทึก
           </h2>
           <AnimatePresence>
             {error && (
@@ -279,7 +279,7 @@ export default function BookingsClient() {
             <div className="relative flex-1">
               <input
                 type="text"
-                placeholder="ค้นหาการจอง..."
+                placeholder="ค้นหาการบันทึกข้อมูล..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -307,7 +307,7 @@ export default function BookingsClient() {
             </div>
           ) : filteredBookings.length === 0 ? (
             <p className="text-center text-gray-600 dark:text-gray-400">
-              ไม่พบประวัติการจอง
+              ไม่พบประวัติการบันทึกข้อมูล
             </p>
           ) : (
             <div className="overflow-x-auto">

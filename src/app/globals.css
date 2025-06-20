@@ -221,3 +221,43 @@ button[type="submit"] svg {
 footer *, footer .footer-text, footer [class*=footer-text] {
   color: white !important;
 }
+
+/* Responsive improvements */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Improve touch targets on mobile */
+  input, select, button {
+    min-height: 44px;
+  }
+  
+  /* Better spacing for mobile */
+  .space-y-4 > * + * {
+    margin-top: 1rem;
+  }
+  
+  .space-y-6 > * + * {
+    margin-top: 1.5rem;
+  }
+}
+
+/* Ensure white text on submit button in all modes */
+button[type="submit"] {
+  color: white !important;
+}
+
+button[type="submit"] * {
+  color: white !important;
+}
+
+/* Footer text always white */
+footer {
+  color: white !important;
+}
+
+footer * {
+  color: white !important;
+}
