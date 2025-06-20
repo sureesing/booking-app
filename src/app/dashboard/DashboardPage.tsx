@@ -69,20 +69,6 @@ const pieColorsDark = [
 const pieBorderLight = pieColorsLight.map(c => c.replace('0.8', '1'));
 const pieBorderDark = pieColorsDark.map(c => c.replace('0.7', '1'));
 
-// --- Extract class level (ม.1-ม.6) ---
-function extractClassLevel(name: string): string {
-  const match = name.match(/ม\.(\d)/);
-  return match ? `ม.${match[1]}` : 'ไม่ระบุ';
-}
-
-// --- Extract gender from prefix ---
-function extractGender(name: string): string {
-  if (!name) return 'ไม่ระบุ';
-  if (name.startsWith('เด็กชาย') || name.startsWith('นาย')) return 'ชาย';
-  if (name.startsWith('เด็กหญิง') || name.startsWith('นางสาว')) return 'หญิง';
-  return 'ไม่ระบุ';
-}
-
 function groupSymptom(symptom: string) {
   if (!symptom || symptom === 'N/A') return 'ไม่ระบุ';
   const s = symptom.trim();
