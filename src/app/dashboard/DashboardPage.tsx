@@ -83,6 +83,18 @@ function extractGender(name: string): string {
   return 'ไม่ระบุ';
 }
 
+function groupSymptom(symptom: string) {
+  if (!symptom || symptom === 'N/A') return 'ไม่ระบุ';
+  const s = symptom.trim();
+  if (s.includes('เวียนหัว') || s.includes('ปวดหัว')) return 'ปวด/เวียนศีรษะ';
+  if (s.includes('บาดเจ็บ') || s.includes('กีฬา')) return 'บาดเจ็บ/อุบัติเหตุ';
+  if (s.includes('ไข้')) return 'ไข้/ไม่สบาย';
+  if (s.includes('ไอ') || s.includes('เจ็บคอ')) return 'ไอ/เจ็บคอ';
+  if (s.includes('ท้องเสีย') || s.includes('ปวดท้อง')) return 'ปวดท้อง/ท้องเสีย';
+  // เพิ่มเติมได้ตามต้องการ
+  return s;
+}
+
 export default function DashboardPage() {
   const [isDark, setIsDark] = useState<boolean>(false);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -252,15 +264,13 @@ export default function DashboardPage() {
 
   // Calculate most common symptoms
   const symptomCategories = [
-    'ปวดหัว',
+    'ปวด/เวียนศีรษะ',
     'ไข้',
     'ปวดท้อง',
     'ปวดท้องประจำเดือน',
     'เจ็บคอ',
-    'บาดเจ็บจากกีฬา',
-    'บาดเจ็บ',
+    'บาดเจ็บ/อุบัติเหตุ',
     'เป็นลม',
-    'เวียนหัว',
     'คลื่นไส้/อาเจียน',
     'ท้องเสีย',
     'ท้องผูก',
@@ -276,31 +286,7 @@ export default function DashboardPage() {
     'อื่นๆ',
   ];
   const symptomCounts = bookings.reduce((acc: Record<string, number>, booking: Booking) => {
-    let category = 'อื่นๆ';
-    if (booking.symptoms && typeof booking.symptoms === 'string') {
-      const s = booking.symptoms.trim().toLowerCase();
-      if (s.includes('ปวดหัว') || s.includes('headache')) category = 'ปวดหัว';
-      else if (s.includes('ไข้') || s.includes('fever')) category = 'ไข้';
-      else if (s.includes('ปวดท้องประจำเดือน')) category = 'ปวดท้องประจำเดือน';
-      else if (s.includes('ปวดท้อง')) category = 'ปวดท้อง';
-      else if (s.includes('เจ็บคอ') || s.includes('throat')) category = 'เจ็บคอ';
-      else if (s.includes('บาดเจ็บจากกีฬา')) category = 'บาดเจ็บจากกีฬา';
-      else if (s.includes('บาดเจ็บ') || s.includes('injury') || s.includes('หกล้ม') || s.includes('ชน')) category = 'บาดเจ็บ';
-      else if (s.includes('เป็นลม')) category = 'เป็นลม';
-      else if (s.includes('เวียนหัว') || s.includes('dizzy')) category = 'เวียนหัว';
-      else if (s.includes('คลื่นไส้') || s.includes('อาเจียน') || s.includes('nausea') || s.includes('vomit')) category = 'คลื่นไส้/อาเจียน';
-      else if (s.includes('ท้องเสีย') || s.includes('diarrhea')) category = 'ท้องเสีย';
-      else if (s.includes('ท้องผูก') || s.includes('constipation')) category = 'ท้องผูก';
-      else if (s.includes('ปวดฟัน') || s.includes('toothache')) category = 'ปวดฟัน';
-      else if (s.includes('ปวดหู') || s.includes('earache')) category = 'ปวดหู';
-      else if (s.includes('ปวดหลัง') || s.includes('back pain')) category = 'ปวดหลัง';
-      else if (s.includes('ปวดข้อ') || s.includes('joint pain')) category = 'ปวดข้อ';
-      else if (s.includes('แผล') || s.includes('เลือด') || s.includes('wound') || s.includes('bleeding')) category = 'แผล/เลือดออก';
-      else if (s.includes('หายใจลำบาก') || s.includes('breathing')) category = 'หายใจลำบาก';
-      else if (s.includes('แพ้') || s.includes('ผื่น') || s.includes('คัน') || s.includes('allergy') || s.includes('rash')) category = 'แพ้/ผื่นคัน';
-      else if (s.includes('ปวดตา') || s.includes('สายตา')) category = 'ปวดตา/สายตา';
-      else if (s.includes('เครียด') || s.includes('วิตก')) category = 'เครียด/วิตกกังวล';
-    }
+    const category = groupSymptom(booking.symptoms || '');
     acc[category] = (acc[category] || 0) + 1;
     return acc;
   }, {});
@@ -616,24 +602,24 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-6 sm:space-y-8 md:space-y-10">
               {/* Summary Card */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-2xl bg-white border border-gray-200/70 shadow-lg hover:shadow-2xl transition-all duration-300 text-center"
-                whileHover={{ scale: 1.025, boxShadow: '0 8px 32px 0 rgba(99,102,241,0.12)' }}
-              >
-                <h3 className="text-base sm:text-lg font-semibold text-gray-950 dark:text-gray-100 mb-2">จำนวนการใช้ทั้งหมด</h3>
-                <p className="text-3xl sm:text-4xl font-bold text-indigo-600 dark:text-indigo-400">{totalBookings}</p>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-2 px-2">
-                  ข้อมูลการใช้ทั้งหมดในระบบจนถึงวันที่ {todayDate.toLocaleDateString('th-TH', {
+              <div className="flex justify-center mb-8">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="p-6 md:p-10 rounded-2xl bg-white border border-gray-200/70 shadow-xl text-center w-full max-w-md"
+                  whileHover={{ scale: 1.03, boxShadow: '0 8px 32px 0 rgba(99,102,241,0.12)' }}
+                >
+                  <h3 className="text-lg font-bold text-gray-950 dark:text-gray-100 mb-2">จำนวนการใช้ทั้งหมด</h3>
+                  <p className="text-5xl font-extrabold text-indigo-600 dark:text-indigo-400 mb-2">{totalBookings}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">ข้อมูลการใช้ทั้งหมดในระบบจนถึงวันที่ {todayDate.toLocaleDateString('th-TH', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric',
                     timeZone: 'Asia/Bangkok',
-                  })}
-                </p>
-              </motion.div>
+                  })}</p>
+                </motion.div>
+              </div>
 
               {/* Key Metrics Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
