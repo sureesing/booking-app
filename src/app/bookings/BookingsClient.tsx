@@ -11,6 +11,7 @@ interface Booking {
   timeSlot: string;
   symptoms?: string;
   treatment?: string;
+  timestamp?: string;
 }
 
 interface TimeSlot {
@@ -26,6 +27,7 @@ export default function BookingsClient() {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filterTimeSlot, setFilterTimeSlot] = useState<string>('all');
+  const [sortByRecent, setSortByRecent] = useState<boolean>(false);
   const router = useRouter();
 
   const { scrollYProgress } = useScroll();
@@ -79,6 +81,7 @@ export default function BookingsClient() {
             timeSlot: booking.period as string || booking.timeSlot as string || '',
             symptoms: booking.symptoms as string || '',
             treatment: booking.treatment as string || '',
+            timestamp: (booking.timestamp && booking.timestamp !== 'N/A') ? booking.timestamp as string : undefined,
           })) : [];
           setBookings(mappedBookings);
         } else {
@@ -98,6 +101,7 @@ export default function BookingsClient() {
   // Define time slots consistent with BookingClient
   const timeSlots: TimeSlot[] = [
     { display: 'ทุกช่วงเวลา', value: 'all' },
+    { display: 'ล่าสุด', value: 'recent' },
     { display: 'คาบ 0', value: '07:30-08:00' },
     { display: 'คาบ 1', value: '08:30-09:30' },
     { display: 'คาบ 2', value: '09:30-10:30' },
@@ -110,17 +114,32 @@ export default function BookingsClient() {
   ];
 
   // Filter and search bookings
-  const filteredBookings = bookings.filter((booking) => {
-    const matchesSearch = (
-      booking.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.timeSlot.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (booking.symptoms && booking.symptoms.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (booking.treatment && booking.treatment.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
-    const matchesFilter = filterTimeSlot === 'all' || booking.timeSlot === filterTimeSlot;
-    return matchesSearch && matchesFilter;
-  });
+  const filteredBookings = bookings
+    .filter((booking) => {
+      const matchesSearch = (
+        booking.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        booking.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        booking.timeSlot.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (booking.symptoms && booking.symptoms.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (booking.treatment && booking.treatment.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+      const matchesFilter =
+        filterTimeSlot === 'all' ||
+        (filterTimeSlot === 'recent' ? true : booking.timeSlot === filterTimeSlot);
+      return matchesSearch && matchesFilter;
+    })
+    .sort((a, b) => {
+      if (filterTimeSlot === 'recent') {
+        const dateA = a.timestamp ? new Date(a.timestamp) : new Date(0);
+        const dateB = b.timestamp ? new Date(b.timestamp) : new Date(0);
+        return dateB.getTime() - dateA.getTime();
+      }
+      return 0;
+    });
+
+  const finalBookings = filterTimeSlot === 'recent'
+    ? filteredBookings.slice(0, 10)
+    : filteredBookings;
 
   const handleToggle = () => {
     setIsDark((prev) => !prev);
@@ -303,11 +322,11 @@ export default function BookingsClient() {
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
             </div>
-          ) : filteredBookings.length === 0 ? (
+          ) : finalBookings.length === 0 ? (
             <p className="text-center text-gray-600 dark:text-gray-400 px-2">ไม่พบประวัติการบันทึกข้อมูล</p>
           ) : (
             <div className="max-w-4xl w-full mx-auto mt-6 grid gap-4 px-2">
-              {filteredBookings.map((booking, index) => (
+              {finalBookings.map((booking, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, y: 10 }}
