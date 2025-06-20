@@ -308,25 +308,6 @@ export default function DashboardPage() {
   const uniqueDates = [...new Set(bookings.map(booking => booking.date))];
   const averageDailyBookings = uniqueDates.length > 0 ? (totalBookings / uniqueDates.length).toFixed(1) : '0';
 
-  // Calculate weekly trend data
-  const weeklyTrendData = {
-    labels: ['2 สัปดาห์ที่แล้ว', 'สัปดาห์ที่แล้ว', 'สัปดาห์นี้'],
-    datasets: [
-      {
-        label: 'จำนวนการใช้งาน',
-        data: [
-          previousWeekBookings,
-          previousWeekBookings,
-          currentWeekBookings
-        ],
-        backgroundColor: isDark ? 'rgba(59, 130, 246, 0.7)' : 'rgba(59, 130, 246, 0.8)',
-        borderColor: isDark ? 'rgba(59, 130, 246, 1)' : 'rgba(59, 130, 246, 1)',
-        borderWidth: 2,
-        tension: 0.4,
-      },
-    ],
-  };
-
   // Bookings by time slot
   const timeSlotCounts = bookings.reduce((acc: Record<string, number>, booking: Booking) => {
     const display = timeSlots.find((slot) => slot.value === booking.timeSlot)?.display || booking.timeSlot || 'ไม่ระบุ';
@@ -402,46 +383,6 @@ export default function DashboardPage() {
         backgroundColor: isDark ? 'rgba(165,180,252,0.7)' : 'rgba(99, 102, 241, 0.8)',
         borderColor: isDark ? 'rgba(165,180,252,1)' : 'rgba(99, 102, 241, 1)',
         borderWidth: 2,
-      },
-    ],
-  };
-
-  // --- Prepare class level data ---
-  const classLevelCounts = bookings.reduce((acc: Record<string, number>, booking: Booking) => {
-    const level = extractClassLevel(booking.firstName || '');
-    acc[level] = (acc[level] || 0) + 1;
-    return acc;
-  }, {});
-  const classLevelLabels = ['ม.1', 'ม.2', 'ม.3', 'ม.4', 'ม.5', 'ม.6', 'ไม่ระบุ'];
-  const classLevelData = {
-    labels: classLevelLabels,
-    datasets: [
-      {
-        label: 'ระดับชั้น',
-        data: classLevelLabels.map(l => classLevelCounts[l] || 0),
-        backgroundColor: isDark ? pieColorsDark : pieColorsLight,
-        borderColor: isDark ? pieBorderDark : pieBorderLight,
-        borderWidth: 1,
-      },
-    ],
-  };
-
-  // --- Prepare gender data ---
-  const genderCounts = bookings.reduce((acc: Record<string, number>, booking: Booking) => {
-    const gender = extractGender(booking.firstName || '');
-    acc[gender] = (acc[gender] || 0) + 1;
-    return acc;
-  }, {});
-  const genderLabels = ['ชาย', 'หญิง', 'ไม่ระบุ'];
-  const genderData = {
-    labels: genderLabels,
-    datasets: [
-      {
-        label: 'เพศ',
-        data: genderLabels.map(g => genderCounts[g] || 0),
-        backgroundColor: isDark ? pieColorsDark : pieColorsLight,
-        borderColor: isDark ? pieBorderDark : pieBorderLight,
-        borderWidth: 1,
       },
     ],
   };
