@@ -102,19 +102,47 @@ export default function DashboardPage() {
     localStorage.setItem('darkMode', isDark.toString());
   }, [isDark]);
 
-  // Fetch bookings
-  useEffect(() => {
-    const fetchBookings = async () => {
-      setIsLoading(true);
-      setError('');
+  // เพิ่ม health check function
+  const checkApiHealth = async () => {
+    try {
+      const url = process.env.NEXT_PUBLIC_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbx3Ur6OqLhIsK7XwAh5w3ey3CARGohbg8mRyt7OLboGeum-cfFXVguCXo_YJbhgftT4/exec';
+      const startTime = Date.now();
+      
+      const response = await fetch(`${url}?action=getBookings`, {
+        method: 'GET',
+        mode: 'cors',
+        credentials: 'omit',
+        cache: 'no-store',
+      });
+      
+      const endTime = Date.now();
+      console.log(`API response time: ${endTime - startTime}ms`);
+      
+      return response.ok;
+    } catch (error: unknown) {
+      console.error('API health check failed:', error);
+      return false;
+    }
+  };
+
+  // Fetch bookings with retry logic
+  const fetchBookingsWithRetry = async (retries = 3) => {
+    for (let i = 0; i < retries; i++) {
       try {
         const url = process.env.NEXT_PUBLIC_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbx3Ur6OqLhIsK7XwAh5w3ey3CARGohbg8mRyt7OLboGeum-cfFXVguCXo_YJbhgftT4/exec';
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
         const response = await fetch(`${url}?action=getBookings`, {
           method: 'GET',
           mode: 'cors',
           credentials: 'omit',
           cache: 'no-store',
+          signal: controller.signal,
         });
+        
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -177,20 +205,55 @@ export default function DashboardPage() {
             .filter((booking: Booking) => booking.date !== ''); // Only include bookings with valid dates
           console.log('Mapped bookings:', mappedBookings);
           setBookings(mappedBookings);
+          return; // Successfully fetched bookings, exit the loop
         } else {
           setError(data.message || 'ไม่สามารถดึงข้อมูลได้');
           setBookings([]);
+          return;
         }
-      } catch (err) {
-        console.error('Fetch error:', err);
-        const errorMessage = err instanceof Error ? err.message : 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้';
-        setError(errorMessage);
-      } finally {
-        setIsLoading(false);
+      } catch (err: unknown) {
+        console.error(`Fetch attempt ${i + 1} failed:`, err);
+        
+        if (i === retries - 1) { // Last attempt
+          let errorMessage = 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้';
+          
+          if (err instanceof Error) {
+            if (err.name === 'AbortError') {
+              errorMessage = 'การเชื่อมต่อใช้เวลานานเกินไป กรุณาลองใหม่';
+            } else {
+              errorMessage = err.message;
+            }
+          }
+          
+          setError(errorMessage);
+          setBookings([]);
+        } else {
+          // Wait 1 second before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
-    };
+    }
+  };
 
-    fetchBookings();
+  // เรียกใช้ health check ก่อน fetch ข้อมูลจริง
+  useEffect(() => {
+    const initializeData = async () => {
+      setIsLoading(true);
+      setError('');
+      
+      // ตรวจสอบ API health ก่อน
+      const isHealthy = await checkApiHealth();
+      if (!isHealthy) {
+        setError('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่');
+        setIsLoading(false);
+        return;
+      }
+      
+      await fetchBookingsWithRetry();
+      setIsLoading(false);
+    };
+    
+    initializeData();
   }, []);
 
   const handleToggle = () => {
@@ -518,11 +581,13 @@ export default function DashboardPage() {
             )}
           </AnimatePresence>
           {isLoading ? (
-            <div className="flex justify-center items-center h-48 sm:h-64">
+            <div className="flex flex-col justify-center items-center h-48 sm:h-64 space-y-4">
               <svg className="animate-spin h-8 w-8 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
+              <p className="text-sm text-gray-600 dark:text-gray-400">กำลังโหลดข้อมูล...</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500">กรุณารอสักครู่</p>
             </div>
           ) : bookings.length === 0 ? (
             <p className="text-center text-gray-600 dark:text-gray-400 px-2">ไม่พบข้อมูลการใช้บริการ</p>
