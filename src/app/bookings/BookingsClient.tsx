@@ -148,20 +148,6 @@ export default function BookingsClient() {
     router.push('/booking');
   };
 
-  // Group similar symptoms for better display
-  function groupSymptom(symptom: string) {
-    if (!symptom || symptom === 'N/A') return 'ไม่ระบุ';
-    const s = symptom.trim();
-    if (s.includes('เวียนหัว') || s.includes('ปวดหัว')) return 'อาการปวด/เวียนศีรษะ';
-    if (s.includes('บาดเจ็บ')) return 'บาดเจ็บ/อุบัติเหตุ';
-    if (s.includes('กีฬา')) return 'บาดเจ็บ/อุบัติเหตุ';
-    if (s.includes('ไข้')) return 'ไข้/ไม่สบาย';
-    if (s.includes('ไอ') || s.includes('เจ็บคอ')) return 'ไอ/เจ็บคอ';
-    if (s.includes('ท้องเสีย') || s.includes('ปวดท้อง')) return 'ปวดท้อง/ท้องเสีย';
-    // เพิ่มเติมได้ตามต้องการ
-    return s;
-  }
-
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-red-50 dark:from-indigo-950 dark:via-gray-900 dark:to-red-950 transition-colors duration-700">
       {/* Navigation */}
@@ -358,7 +344,7 @@ export default function BookingsClient() {
                         className="inline-block px-2 py-1 ml-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-200"
                         title={booking.symptoms}
                       >
-                        {groupSymptom(booking.symptoms || '')}
+                        {booking.symptoms || 'ไม่ระบุ'}
                       </span>
                     </div>
                   </div>

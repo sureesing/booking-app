@@ -15,6 +15,17 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "iMedReserve",
   description: "A modern login page with dark mode",
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#6366f1' },
+    { media: '(prefers-color-scheme: dark)', color: '#1e293b' },
+  ],
+  colorScheme: 'light dark',
 };
 
 export default function RootLayout({
@@ -23,9 +34,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta name="color-scheme" content="light dark" />
+        <meta name="theme-color" content="#6366f1" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#1e293b" media="(prefers-color-scheme: dark)" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
       >
         {children}
         {/* Space Footer - compact, more animation */}
@@ -38,26 +56,26 @@ export default function RootLayout({
             <svg className="absolute right-1/4 top-12 animate-shooting-star3" width="60" height="5"><line x1="0" y1="2.5" x2="60" y2="2.5" stroke="#fbcfe8" strokeWidth="2" strokeDasharray="6 5" opacity="0.5"/></svg>
             {/* Planets & rings */}
             <span className="absolute left-8 bottom-6 animate-planet-spin">
-              <span className="block w-7 h-7 bg-gradient-to-br from-indigo-400 via-blue-400 to-purple-500 rounded-full shadow-xl border-2 border-white/30" />
-              <span className="block w-10 h-1 bg-gradient-to-r from-white/30 to-indigo-300/30 rounded-full absolute left-[-6px] top-3 rotate-12 opacity-70" />
+              <span className="block w-7 h-7 bg-gradient-to-br from-indigo-400 via-blue-400 to-purple-500 rounded-full shadow-xl border-2 border-white/30 footer-planet" />
+              <span className="block w-10 h-1 bg-gradient-to-r from-white/30 to-indigo-300/30 rounded-full absolute left-[-6px] top-3 rotate-12 opacity-70 footer-ring" />
             </span>
             <span className="absolute right-10 top-6 animate-planet-bounce">
-              <span className="block w-5 h-5 bg-gradient-to-br from-yellow-200 via-pink-300 to-purple-400 rounded-full shadow-md border-2 border-white/20" />
-              <span className="block w-8 h-1 bg-gradient-to-r from-pink-100/60 to-purple-200/60 rounded-full absolute left-[-4px] top-2 rotate-6 opacity-60" />
+              <span className="block w-5 h-5 bg-gradient-to-br from-yellow-200 via-pink-300 to-purple-400 rounded-full shadow-md border-2 border-white/20 footer-planet-small" />
+              <span className="block w-8 h-1 bg-gradient-to-r from-pink-100/60 to-purple-200/60 rounded-full absolute left-[-4px] top-2 rotate-6 opacity-60 footer-ring-small" />
             </span>
             {/* Comet */}
             <span className="absolute left-1/3 top-1/2 animate-comet">
-              <span className="block w-2 h-2 bg-white rounded-full shadow-md" />
-              <span className="block w-10 h-1 bg-gradient-to-r from-white/80 to-transparent rounded-full absolute left-2 top-0.5 opacity-70" />
+              <span className="block w-2 h-2 bg-white rounded-full shadow-md footer-comet" />
+              <span className="block w-10 h-1 bg-gradient-to-r from-white/80 to-transparent rounded-full absolute left-2 top-0.5 opacity-70 footer-comet-tail" />
             </span>
             {/* Meteor */}
             <span className="absolute right-1/5 bottom-8 animate-meteor">
-              <span className="block w-1.5 h-1.5 bg-blue-200 rounded-full shadow-sm" />
-              <span className="block w-6 h-0.5 bg-gradient-to-r from-blue-200/80 to-transparent rounded-full absolute left-1 top-0.5 opacity-60" />
+              <span className="block w-1.5 h-1.5 bg-blue-200 rounded-full shadow-sm footer-meteor" />
+              <span className="block w-6 h-0.5 bg-gradient-to-r from-blue-200/80 to-transparent rounded-full absolute left-1 top-0.5 opacity-60 footer-meteor-tail" />
             </span>
             {/* Small twinkling stars */}
             {[...Array(24)].map((_,i)=>(
-              <span key={i} className={`absolute bg-white rounded-full animate-twinkle`} style={{
+              <span key={i} className={`absolute bg-white rounded-full animate-twinkle footer-star`} style={{
                 left: `${Math.random()*100}%`,
                 top: `${Math.random()*100}%`,
                 width: `${Math.random()*1.5+1}px`,

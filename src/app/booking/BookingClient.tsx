@@ -234,13 +234,21 @@ export default function BookingClient() {
         const gradeValue = data.student.grade.replace('ม.', '');
         setGrade(gradeValue);
         
-        setPrefix(data.student.prefix);
-        setFirstName(data.student.firstName);
-        setLastName(data.student.lastName);
+        // Set prefix, firstName, lastName from API response
+        setPrefix(data.student.prefix || '');
+        setFirstName(data.student.firstName || '');
+        setLastName(data.student.lastName || '');
         setStudentProfile(data.student);
         setCanSubmit(true);
         setError(''); // Clear any previous errors
         lastLookedUpId.current = studentId; // บันทึก ID ที่ lookup แล้ว
+        
+        console.log('Autofilled data:', {
+          prefix: data.student.prefix,
+          firstName: data.student.firstName,
+          lastName: data.student.lastName,
+          grade: gradeValue
+        });
       } else {
         // Student not found - clear form and disable submit
         setGrade('');
@@ -262,18 +270,19 @@ export default function BookingClient() {
   }, [studentId, isLookingUp, studentProfile]);
 
   const timeSlots = [
-    { display: 'คาบ 0', value: '07:30-08:00' },
-    { display: 'คาบ 1', value: '08:30-09:30' },
-    { display: 'คาบ 2', value: '09:30-10:30' },
-    { display: 'คาบ 3', value: '10:30-11:30' },
-    { display: 'คาบ 4', value: '11:30-12:30' },
-    { display: 'คาบ 5', value: '12:30-13:30' },
-    { display: 'คาบ 6', value: '13:30-14:30' },
-    { display: 'คาบ 7', value: '14:30-15:30' },
-    { display: 'คาบ 8', value: '15:30-16:30' },
+    { display: 'คาบ 0', value: '07:30-08:30' },
+    { display: 'คาบ 1', value: '08:30-09:20' },
+    { display: 'คาบ 2', value: '09:20-10:10' },
+    { display: 'คาบ 3', value: '10:10-11:00' },
+    { display: 'คาบ 4', value: '11:00-11:50' },
+    { display: 'คาบ 5', value: '11:50-13:00' },
+    { display: 'คาบ 6', value: '13:00-13:50' },
+    { display: 'คาบ 7', value: '13:50-14:40' },
+    { display: 'คาบ 8', value: '14:40-15:30' },
+    { display: 'คาบ 9', value: '15:30-16:30' },
   ];
 
-  const prefixes = ['เด็กชาย', 'เด็กหญิง', 'นาย', 'นางสาว'];
+  const prefixes = ['เด็กชาย', 'เด็กหญิง', 'นาย', 'นางสาว', 'นาง', 'ดร.', 'อาจารย์'];
 
   const symptomCategories = [
     'ปวดหัว', 'ไข้', 'ปวดท้อง', 'เจ็บคอ', 'บาดเจ็บ', 'เวียนหัว', 'คลื่นไส้/อาเจียน',

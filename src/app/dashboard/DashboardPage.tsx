@@ -4,7 +4,7 @@ import React from 'react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Moon, Sun, RefreshCw } from 'lucide-react';
+import { Calendar, Moon, Sun } from 'lucide-react';
 import { Pie, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
 
@@ -77,6 +77,19 @@ function groupSymptom(symptom: string) {
   if (s.includes('ไข้')) return 'ไข้/ไม่สบาย';
   if (s.includes('ไอ') || s.includes('เจ็บคอ')) return 'ไอ/เจ็บคอ';
   if (s.includes('ท้องเสีย') || s.includes('ปวดท้อง')) return 'ปวดท้อง/ท้องเสีย';
+  if (s.includes('คลื่นไส้') || s.includes('อาเจียน')) return 'คลื่นไส้/อาเจียน';
+  if (s.includes('ปวดท้องประจำเดือน')) return 'ปวดท้องประจำเดือน';
+  if (s.includes('เป็นลม')) return 'เป็นลม';
+  if (s.includes('ท้องผูก')) return 'ท้องผูก';
+  if (s.includes('ปวดฟัน')) return 'ปวดฟัน';
+  if (s.includes('ปวดหู')) return 'ปวดหู';
+  if (s.includes('ปวดหลัง')) return 'ปวดหลัง';
+  if (s.includes('ปวดข้อ')) return 'ปวดข้อ';
+  if (s.includes('แผล') || s.includes('เลือดออก')) return 'แผล/เลือดออก';
+  if (s.includes('หายใจลำบาก')) return 'หายใจลำบาก';
+  if (s.includes('แพ้') || s.includes('ผื่นคัน')) return 'แพ้/ผื่นคัน';
+  if (s.includes('ปวดตา') || s.includes('สายตา')) return 'ปวดตา/สายตา';
+  if (s.includes('เครียด') || s.includes('วิตกกังวล')) return 'เครียด/วิตกกังวล';
   // เพิ่มเติมได้ตามต้องการ
   return s;
 }
@@ -180,14 +193,20 @@ export default function DashboardPage() {
                 console.warn(`Missing date at index ${index}:`, booking);
                 formattedDate = '';
               }
-              console.log(`Index ${index}: Raw date: ${booking.date}, Formatted date: ${formattedDate}, TimeSlot: ${booking.period || booking.timeSlot}, Symptoms: ${booking.symptome || booking.symptoms}`);
+              
+              // Map according to new Google Apps Script structure
+              const timeSlot = booking['คาบเรียนที่'] || booking.period || booking.timeSlot || '';
+              const symptoms = booking['อาการ'] || booking.symptoms || 'ไม่ระบุ';
+              
+              console.log(`Index ${index}: Raw date: ${booking.date}, Formatted date: ${formattedDate}, TimeSlot: ${timeSlot}, Symptoms: ${symptoms}`);
+              
               return {
-                firstName: booking.firstName as string || '',
-                lastName: booking.lastName as string || '',
-                timeSlot: booking.period as string || booking.timeSlot as string || '',
+                firstName: booking['ชื่อ'] || booking.firstName as string || '',
+                lastName: booking['นามสกุล'] || booking.lastName as string || '',
+                timeSlot: timeSlot,
                 date: formattedDate,
-                symptoms: booking.symptome as string || booking.symptoms as string || 'ไม่ระบุ',
-                treatment: booking.treatment as string || 'ไม่มี',
+                symptoms: symptoms,
+                treatment: booking['วิธีรักษา'] || booking.treatment as string || 'ไม่มี',
               };
             })
             .filter((booking: Booking) => booking.date !== ''); // Only include bookings with valid dates
@@ -246,11 +265,6 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // Add refresh function
-  const handleRefresh = () => {
-    window.location.reload();
-  };
-
   const handleToggle = () => {
     setIsDark((prev) => !prev);
   };
@@ -266,6 +280,7 @@ export default function DashboardPage() {
     { display: 'คาบ 6', value: '13:30-14:30' },
     { display: 'คาบ 7', value: '14:30-15:30' },
     { display: 'คาบ 8', value: '15:30-16:30' },
+    { display: 'ไม่ระบุ', value: 'ไม่ระบุ' },
   ];
 
   // Calculate statistics
@@ -309,14 +324,13 @@ export default function DashboardPage() {
   // Calculate most common symptoms
   const symptomCategories = [
     'ปวด/เวียนศีรษะ',
-    'ไข้',
-    'ปวดท้อง',
+    'ไข้/ไม่สบาย',
+    'ปวดท้อง/ท้องเสีย',
     'ปวดท้องประจำเดือน',
-    'เจ็บคอ',
+    'ไอ/เจ็บคอ',
     'บาดเจ็บ/อุบัติเหตุ',
     'เป็นลม',
     'คลื่นไส้/อาเจียน',
-    'ท้องเสีย',
     'ท้องผูก',
     'ปวดฟัน',
     'ปวดหู',
@@ -455,7 +469,7 @@ export default function DashboardPage() {
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
               whileTap={{ scale: 0.95 }}
               onClick={() => router.push('/booking')}
-              className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
+              className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-gray-700/80 dark:hover:text-white transition-all duration-300 flex items-center space-x-2"
             >
               <Calendar className="w-4 h-4" />
               <span>นักเรียนบันทึกข้อมูล</span>
@@ -464,20 +478,10 @@ export default function DashboardPage() {
               whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
               whileTap={{ scale: 0.95 }}
               onClick={() => router.push('/bookings')}
-              className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
+              className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-gray-700/80 dark:hover:text-white transition-all duration-300 flex items-center space-x-2"
             >
               <Calendar className="w-4 h-4" />
               <span>ประวัติการบันทึก</span>
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleRefresh}
-              disabled={isLoading}
-              className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-              <span>รีเฟรช</span>
             </motion.button>
             <label className="relative inline-flex items-center cursor-pointer group">
               <input type="checkbox" checked={isDark} onChange={handleToggle} className="sr-only peer" />
@@ -522,7 +526,7 @@ export default function DashboardPage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => router.push('/booking')}
-                  className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
+                  className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-gray-700/80 dark:hover:text-white transition-all duration-300 flex items-center space-x-2"
                 >
                   <Calendar className="w-4 h-4" />
                   <span>นักเรียนบันทึกข้อมูล</span>
@@ -531,20 +535,10 @@ export default function DashboardPage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => router.push('/bookings')}
-                  className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2"
+                  className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-gray-700/80 dark:hover:text-white transition-all duration-300 flex items-center space-x-2"
                 >
                   <Calendar className="w-4 h-4" />
                   <span>ประวัติการบันทึก</span>
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleRefresh}
-                  disabled={isLoading}
-                  className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                  <span>รีเฟรช</span>
                 </motion.button>
                 <label className="relative inline-flex items-center cursor-pointer group">
                   <input type="checkbox" checked={isDark} onChange={handleToggle} className="sr-only peer" />
@@ -768,23 +762,23 @@ export default function DashboardPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.1 }}
-                  className="p-4 sm:p-6 rounded-xl bg-white border border-gray-200/70 shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="p-4 sm:p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-200/70 dark:border-gray-700/70 shadow-lg hover:shadow-xl transition-all duration-300"
                   whileHover={{ scale: 1.02 }}
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">อัตราการเติบโต</p>
+                      <p className="text-sm font-medium text-gray-600 dark:text-white">อัตราการเติบโต</p>
                       <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                         {parseFloat(growthRate) >= 0 ? '+' : ''}{growthRate}%
                       </p>
                     </div>
-                    <div className={`p-2 rounded-full ${parseFloat(growthRate) >= 0 ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
+                    <div className={`p-2 rounded-full ${parseFloat(growthRate) >= 0 ? 'bg-green-100 dark:bg-green-900/50' : 'bg-red-100 dark:bg-red-900/50'}`}>
                       <svg className={`w-6 h-6 ${parseFloat(growthRate) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={parseFloat(growthRate) >= 0 ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" : "M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"} />
                       </svg>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">เทียบกับสัปดาห์ที่แล้ว</p>
+                  <p className="text-xs text-gray-500 dark:text-white mt-2">เทียบกับสัปดาห์ก่อนหน้า</p>
                 </motion.div>
 
                 {/* Average Daily */}
@@ -792,21 +786,21 @@ export default function DashboardPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
-                  className="p-4 sm:p-6 rounded-xl bg-white border border-gray-200/70 shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="p-4 sm:p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-200/70 dark:border-gray-700/70 shadow-lg hover:shadow-xl transition-all duration-300"
                   whileHover={{ scale: 1.02 }}
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">เฉลี่ยต่อวัน</p>
+                      <p className="text-sm font-medium text-gray-600 dark:text-white">จำนวนเฉลี่ยต่อวัน</p>
                       <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{averageDailyBookings}</p>
                     </div>
-                    <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                    <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/50">
                       <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">การใช้งานเฉลี่ย</p>
+                  <p className="text-xs text-gray-500 dark:text-white mt-2">การเข้ารับบริการเฉลี่ย</p>
                 </motion.div>
 
                 {/* Peak Hour */}
@@ -814,21 +808,21 @@ export default function DashboardPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.3 }}
-                  className="p-4 sm:p-6 rounded-xl bg-white border border-gray-200/70 shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="p-4 sm:p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-200/70 dark:border-gray-700/70 shadow-lg hover:shadow-xl transition-all duration-300"
                   whileHover={{ scale: 1.02 }}
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">ช่วงเวลาที่คึกคัก</p>
+                      <p className="text-sm font-medium text-gray-600 dark:text-white">ช่วงเวลาที่มีผู้ใช้บริการสูงสุด</p>
                       <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{peakHour[0]}:00</p>
                     </div>
-                    <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/30">
+                    <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/50">
                       <svg className="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{peakHour[1]} การใช้งาน</p>
+                  <p className="text-xs text-gray-500 dark:text-white mt-2">{peakHour[1]} ครั้ง</p>
                 </motion.div>
 
                 {/* Top Symptom */}
@@ -836,21 +830,21 @@ export default function DashboardPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.4 }}
-                  className="p-4 sm:p-6 rounded-xl bg-white border border-gray-200/70 shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="p-4 sm:p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-200/70 dark:border-gray-700/70 shadow-lg hover:shadow-xl transition-all duration-300"
                   whileHover={{ scale: 1.02 }}
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">อาการที่พบบ่อย</p>
+                      <p className="text-sm font-medium text-gray-600 dark:text-white">อาการที่พบมากที่สุด</p>
                       <p className="text-lg font-bold text-purple-600 dark:text-purple-400 truncate">{mostCommonSymptom}</p>
                     </div>
-                    <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/30">
+                    <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/50">
                       <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{mostCommonSymptomCount} ครั้ง</p>
+                  <p className="text-xs text-gray-500 dark:text-white mt-2">{mostCommonSymptomCount} ครั้ง</p>
                 </motion.div>
               </div>
             </div>

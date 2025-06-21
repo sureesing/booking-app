@@ -8,14 +8,8 @@ export async function GET(req: NextRequest) {
     const action = searchParams.get('action');
     
     if (action === 'getBookings') {
-      const scriptUrl = process.env.NEXT_PUBLIC_SCRIPT_URL;
-      if (!scriptUrl) {
-        return NextResponse.json(
-          { success: false, message: 'Missing NEXT_PUBLIC_SCRIPT_URL environment variable' },
-          { status: 500 }
-        );
-      }
-
+      const scriptUrl = 'https://script.google.com/macros/s/AKfycbzMXNmYPdtIC_X_3Sl2V7P5b5tR21QNTp9oBmPl9H43qWOBudoQ47ruZxf1wT9pdv9k/exec';
+      
       const response = await fetch(`${scriptUrl}?action=getBookings`, {
         method: 'GET',
         headers: {
@@ -80,7 +74,41 @@ export async function POST(req: NextRequest) {
         });
         
         console.log('GET response status:', response.status);
-        let data = await response.json();
+        console.log('GET response headers:', Object.fromEntries(response.headers.entries()));
+        
+        // Check if response is HTML instead of JSON
+        const responseText = await response.text();
+        console.log('GET response text (first 200 chars):', responseText.substring(0, 200));
+        
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('Failed to parse JSON response:', parseError);
+          console.log('Full response text:', responseText);
+          
+          // If it's HTML, it might be an error page
+          if (responseText.includes('<!DOCTYPE') || responseText.includes('<html')) {
+            return NextResponse.json(
+              { 
+                success: false, 
+                message: 'Google Apps Script returned HTML instead of JSON. Please check if the script is deployed correctly.',
+                details: 'The script URL might be incorrect or the script needs to be redeployed.'
+              },
+              { status: 500 }
+            );
+          }
+          
+          return NextResponse.json(
+            { 
+              success: false, 
+              message: 'Invalid response format from Google Apps Script',
+              details: 'Expected JSON but received: ' + responseText.substring(0, 100)
+            },
+            { status: 500 }
+          );
+        }
+        
         console.log('GET response data:', data);
         
         // If GET fails, try POST
@@ -96,7 +124,34 @@ export async function POST(req: NextRequest) {
           });
           
           console.log('POST response status:', response.status);
-          data = await response.json();
+          const postResponseText = await response.text();
+          console.log('POST response text (first 200 chars):', postResponseText.substring(0, 200));
+          
+          try {
+            data = JSON.parse(postResponseText);
+          } catch (postParseError) {
+            console.error('Failed to parse POST JSON response:', postParseError);
+            if (postResponseText.includes('<!DOCTYPE') || postResponseText.includes('<html')) {
+              return NextResponse.json(
+                { 
+                  success: false, 
+                  message: 'Google Apps Script returned HTML instead of JSON. Please check if the script is deployed correctly.',
+                  details: 'The script URL might be incorrect or the script needs to be redeployed.'
+                },
+                { status: 500 }
+              );
+            }
+            
+            return NextResponse.json(
+              { 
+                success: false, 
+                message: 'Invalid response format from Google Apps Script (POST)',
+                details: 'Expected JSON but received: ' + postResponseText.substring(0, 100)
+              },
+              { status: 500 }
+            );
+          }
+          
           console.log('POST response data:', data);
         }
         
@@ -209,7 +264,38 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify(payload),
     });
 
-    const data = await response.json();
+    // Check if response is HTML instead of JSON
+    const responseText = await response.text();
+    console.log('Booking submission response text (first 200 chars):', responseText.substring(0, 200));
+    
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Failed to parse booking submission JSON response:', parseError);
+      console.log('Full response text:', responseText);
+      
+      if (responseText.includes('<!DOCTYPE') || responseText.includes('<html')) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            message: 'Google Apps Script returned HTML instead of JSON. Please check if the script is deployed correctly.',
+            details: 'The script URL might be incorrect or the script needs to be redeployed.'
+          },
+          { status: 500 }
+        );
+      }
+      
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Invalid response format from Google Apps Script',
+          details: 'Expected JSON but received: ' + responseText.substring(0, 100)
+        },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(data, { status: response.status });
   } catch (error: unknown) {
     let message = 'Unknown error';
