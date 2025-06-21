@@ -4,7 +4,7 @@ import React from 'react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Moon, Sun } from 'lucide-react';
+import { Calendar, Moon, Sun, RefreshCw } from 'lucide-react';
 import { Pie, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
 
@@ -102,46 +102,34 @@ export default function DashboardPage() {
     localStorage.setItem('darkMode', isDark.toString());
   }, [isDark]);
 
-  // เพิ่ม health check function
-  const checkApiHealth = async () => {
-    try {
-      const url = process.env.NEXT_PUBLIC_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbx3Ur6OqLhIsK7XwAh5w3ey3CARGohbg8mRyt7OLboGeum-cfFXVguCXo_YJbhgftT4/exec';
-      const startTime = Date.now();
-      
-      const response = await fetch(`${url}?action=getBookings`, {
-        method: 'GET',
-        mode: 'cors',
-        credentials: 'omit',
-        cache: 'no-store',
-      });
-      
-      const endTime = Date.now();
-      console.log(`API response time: ${endTime - startTime}ms`);
-      
-      return response.ok;
-    } catch (error: unknown) {
-      console.error('API health check failed:', error);
-      return false;
-    }
-  };
+  // Fetch bookings with retry mechanism
+  useEffect(() => {
+    let isMounted = true;
+    let retryCount = 0;
+    const maxRetries = 3;
+    const retryDelay = 2000; // 2 seconds
 
-  // Fetch bookings with retry logic
-  const fetchBookingsWithRetry = async (retries = 3) => {
-    for (let i = 0; i < retries; i++) {
+    const fetchBookings = async (retryAttempt = 0) => {
+      if (!isMounted) return;
+      
+      setIsLoading(true);
+      setError('');
+      
       try {
-        const url = process.env.NEXT_PUBLIC_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbx3Ur6OqLhIsK7XwAh5w3ey3CARGohbg8mRyt7OLboGeum-cfFXVguCXo_YJbhgftT4/exec';
+        const url = '/api/proxy?action=getBookings';
         
+        // Add timeout to fetch request
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
         
-        const response = await fetch(`${url}?action=getBookings`, {
+        const response = await fetch(url, {
           method: 'GET',
-          mode: 'cors',
-          credentials: 'omit',
-          cache: 'no-store',
           signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+          },
         });
-        
+
         clearTimeout(timeoutId);
 
         if (!response.ok) {
@@ -204,57 +192,64 @@ export default function DashboardPage() {
             })
             .filter((booking: Booking) => booking.date !== ''); // Only include bookings with valid dates
           console.log('Mapped bookings:', mappedBookings);
-          setBookings(mappedBookings);
-          return; // Successfully fetched bookings, exit the loop
-        } else {
-          setError(data.message || 'ไม่สามารถดึงข้อมูลได้');
-          setBookings([]);
-          return;
-        }
-      } catch (err: unknown) {
-        console.error(`Fetch attempt ${i + 1} failed:`, err);
-        
-        if (i === retries - 1) { // Last attempt
-          let errorMessage = 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้';
-          
-          if (err instanceof Error) {
-            if (err.name === 'AbortError') {
-              errorMessage = 'การเชื่อมต่อใช้เวลานานเกินไป กรุณาลองใหม่';
-            } else {
-              errorMessage = err.message;
-            }
+          if (isMounted) {
+            setBookings(mappedBookings);
+            setError(''); // Clear any previous errors
           }
-          
+        } else {
+          throw new Error(data.message || 'ไม่สามารถดึงข้อมูลได้');
+        }
+      } catch (err) {
+        console.error('Fetch error:', err);
+        
+        // Handle specific error types
+        let errorMessage = 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้';
+        
+        if (err instanceof Error) {
+          if (err.name === 'AbortError') {
+            errorMessage = 'การเชื่อมต่อใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง';
+          } else if (err.message.includes('Failed to fetch') || err.message.includes('Load failed')) {
+            errorMessage = 'การเชื่อมต่อกับเครือข่ายหายไป กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต';
+          } else {
+            errorMessage = err.message;
+          }
+        }
+
+        if (isMounted) {
           setError(errorMessage);
           setBookings([]);
-        } else {
-          // Wait 1 second before retrying
-          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
+        // Retry logic
+        if (retryAttempt < maxRetries && isMounted) {
+          console.log(`Retrying... Attempt ${retryAttempt + 1}/${maxRetries}`);
+          setTimeout(() => {
+            if (isMounted) {
+              fetchBookings(retryAttempt + 1);
+            }
+          }, retryDelay * (retryAttempt + 1)); // Exponential backoff
+        } else if (retryAttempt >= maxRetries && isMounted) {
+          setError('ไม่สามารถเชื่อมต่อได้หลังจากลองหลายครั้ง กรุณารีเฟรชหน้าเว็บ');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
         }
       }
-    }
-  };
-
-  // เรียกใช้ health check ก่อน fetch ข้อมูลจริง
-  useEffect(() => {
-    const initializeData = async () => {
-      setIsLoading(true);
-      setError('');
-      
-      // ตรวจสอบ API health ก่อน
-      const isHealthy = await checkApiHealth();
-      if (!isHealthy) {
-        setError('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่');
-        setIsLoading(false);
-        return;
-      }
-      
-      await fetchBookingsWithRetry();
-      setIsLoading(false);
     };
-    
-    initializeData();
+
+    fetchBookings();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  // Add refresh function
+  const handleRefresh = () => {
+    window.location.reload();
+  };
 
   const handleToggle = () => {
     setIsDark((prev) => !prev);
@@ -348,7 +343,7 @@ export default function DashboardPage() {
         data: symptomCategories.map((category) => symptomCounts[category] || 0),
         backgroundColor: isDark ? pieColorsDark : pieColorsLight,
         borderColor: isDark ? pieBorderDark : pieBorderLight,
-        borderWidth: 1,
+        borderWidth: 2,
       },
     ],
   };
@@ -372,7 +367,7 @@ export default function DashboardPage() {
         data: Object.values(timeSlotCounts),
         backgroundColor: isDark ? pieColorsDark : pieColorsLight,
         borderColor: isDark ? pieBorderDark : pieBorderLight,
-        borderWidth: 1,
+        borderWidth: 2,
       },
     ],
   };
@@ -474,6 +469,16 @@ export default function DashboardPage() {
               <Calendar className="w-4 h-4" />
               <span>ประวัติการบันทึก</span>
             </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.5)' }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <span>รีเฟรช</span>
+            </motion.button>
             <label className="relative inline-flex items-center cursor-pointer group">
               <input type="checkbox" checked={isDark} onChange={handleToggle} className="sr-only peer" />
               <div className="w-20 h-10 bg-gray-200 peer-checked:bg-gradient-to-r peer-checked:from-indigo-700 peer-checked:to-red-700 rounded-full transition-all duration-500 shadow-[0_2px_8px_rgba(0,0,0,0.15)] dark:shadow-[0_2px_8px_rgba(99,102,241,0.3)] group-hover:shadow-[0_2px_12px_rgba(0,0,0,0.2)] dark:group-hover:shadow-[0_2px_12px_rgba(99,102,241,0.5)]">
@@ -531,6 +536,16 @@ export default function DashboardPage() {
                   <Calendar className="w-4 h-4" />
                   <span>ประวัติการบันทึก</span>
                 </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleRefresh}
+                  disabled={isLoading}
+                  className="text-gray-950 dark:text-gray-100 text-sm font-medium py-2 px-4 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all duration-300 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  <span>รีเฟรช</span>
+                </motion.button>
                 <label className="relative inline-flex items-center cursor-pointer group">
                   <input type="checkbox" checked={isDark} onChange={handleToggle} className="sr-only peer" />
                   <div className="w-20 h-10 bg-gray-200 peer-checked:bg-gradient-to-r peer-checked:from-indigo-700 peer-checked:to-red-700 rounded-full transition-all duration-500 shadow-[0_2px_8px_rgba(0,0,0,0.15)] dark:shadow-[0_2px_8px_rgba(99,102,241,0.3)] group-hover:shadow-[0_2px_12px_rgba(0,0,0,0.2)] dark:group-hover:shadow-[0_2px_12px_rgba(99,102,241,0.5)]">
@@ -581,131 +596,16 @@ export default function DashboardPage() {
             )}
           </AnimatePresence>
           {isLoading ? (
-            <div className="flex flex-col justify-center items-center h-48 sm:h-64 space-y-4">
+            <div className="flex justify-center items-center h-48 sm:h-64">
               <svg className="animate-spin h-8 w-8 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
-              <p className="text-sm text-gray-600 dark:text-gray-400">กำลังโหลดข้อมูล...</p>
-              <p className="text-xs text-gray-500 dark:text-gray-500">กรุณารอสักครู่</p>
             </div>
           ) : bookings.length === 0 ? (
             <p className="text-center text-gray-600 dark:text-gray-400 px-2">ไม่พบข้อมูลการใช้บริการ</p>
           ) : (
             <div className="space-y-6 sm:space-y-8 md:space-y-10">
-              {/* Summary Card */}
-              <div className="flex justify-center mb-8">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="p-6 md:p-10 rounded-2xl bg-white border border-gray-200/70 shadow-xl text-center w-full max-w-md"
-                  whileHover={{ scale: 1.03, boxShadow: '0 8px 32px 0 rgba(99,102,241,0.12)' }}
-                >
-                  <h3 className="text-lg font-bold text-gray-950 dark:text-gray-100 mb-2">จำนวนการใช้ทั้งหมด</h3>
-                  <p className="text-5xl font-extrabold text-indigo-600 dark:text-indigo-400 mb-2">{totalBookings}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">ข้อมูลการใช้ทั้งหมดในระบบจนถึงวันที่ {todayDate.toLocaleDateString('th-TH', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    timeZone: 'Asia/Bangkok',
-                  })}</p>
-                </motion.div>
-              </div>
-
-              {/* Key Metrics Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                {/* Growth Rate */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
-                  className="p-4 sm:p-6 rounded-xl bg-white border border-gray-200/70 shadow-lg hover:shadow-xl transition-all duration-300"
-                  whileHover={{ scale: 1.02 }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">อัตราการเติบโต</p>
-                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                        {parseFloat(growthRate) >= 0 ? '+' : ''}{growthRate}%
-                      </p>
-                    </div>
-                    <div className={`p-2 rounded-full ${parseFloat(growthRate) >= 0 ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
-                      <svg className={`w-6 h-6 ${parseFloat(growthRate) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={parseFloat(growthRate) >= 0 ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" : "M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"} />
-                      </svg>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">เทียบกับสัปดาห์ที่แล้ว</p>
-                </motion.div>
-
-                {/* Average Daily */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className="p-4 sm:p-6 rounded-xl bg-white border border-gray-200/70 shadow-lg hover:shadow-xl transition-all duration-300"
-                  whileHover={{ scale: 1.02 }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">เฉลี่ยต่อวัน</p>
-                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{averageDailyBookings}</p>
-                    </div>
-                    <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30">
-                      <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">การใช้งานเฉลี่ย</p>
-                </motion.div>
-
-                {/* Peak Hour */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.3 }}
-                  className="p-4 sm:p-6 rounded-xl bg-white border border-gray-200/70 shadow-lg hover:shadow-xl transition-all duration-300"
-                  whileHover={{ scale: 1.02 }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">ช่วงเวลาที่คึกคัก</p>
-                      <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{peakHour[0]}:00</p>
-                    </div>
-                    <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/30">
-                      <svg className="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{peakHour[1]} การใช้งาน</p>
-                </motion.div>
-
-                {/* Top Symptom */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.4 }}
-                  className="p-4 sm:p-6 rounded-xl bg-white border border-gray-200/70 shadow-lg hover:shadow-xl transition-all duration-300"
-                  whileHover={{ scale: 1.02 }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">อาการที่พบบ่อย</p>
-                      <p className="text-lg font-bold text-purple-600 dark:text-purple-400 truncate">{mostCommonSymptom}</p>
-                    </div>
-                    <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/30">
-                      <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{mostCommonSymptomCount} ครั้ง</p>
-                </motion.div>
-              </div>
-
               {/* Charts */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
                 {/* Pie Chart: Time Slots */}
@@ -858,6 +758,99 @@ export default function DashboardPage() {
                       }}
                     />
                   </div>
+                </motion.div>
+              </div>
+
+              {/* Statistics Cards - ย้ายมาด้านล่าง */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                {/* Growth Rate */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                  className="p-4 sm:p-6 rounded-xl bg-white border border-gray-200/70 shadow-lg hover:shadow-xl transition-all duration-300"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">อัตราการเติบโต</p>
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                        {parseFloat(growthRate) >= 0 ? '+' : ''}{growthRate}%
+                      </p>
+                    </div>
+                    <div className={`p-2 rounded-full ${parseFloat(growthRate) >= 0 ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
+                      <svg className={`w-6 h-6 ${parseFloat(growthRate) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={parseFloat(growthRate) >= 0 ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" : "M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"} />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">เทียบกับสัปดาห์ที่แล้ว</p>
+                </motion.div>
+
+                {/* Average Daily */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="p-4 sm:p-6 rounded-xl bg-white border border-gray-200/70 shadow-lg hover:shadow-xl transition-all duration-300"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">เฉลี่ยต่อวัน</p>
+                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{averageDailyBookings}</p>
+                    </div>
+                    <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                      <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">การใช้งานเฉลี่ย</p>
+                </motion.div>
+
+                {/* Peak Hour */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                  className="p-4 sm:p-6 rounded-xl bg-white border border-gray-200/70 shadow-lg hover:shadow-xl transition-all duration-300"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">ช่วงเวลาที่คึกคัก</p>
+                      <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{peakHour[0]}:00</p>
+                    </div>
+                    <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/30">
+                      <svg className="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{peakHour[1]} การใช้งาน</p>
+                </motion.div>
+
+                {/* Top Symptom */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="p-4 sm:p-6 rounded-xl bg-white border border-gray-200/70 shadow-lg hover:shadow-xl transition-all duration-300"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">อาการที่พบบ่อย</p>
+                      <p className="text-lg font-bold text-purple-600 dark:text-purple-400 truncate">{mostCommonSymptom}</p>
+                    </div>
+                    <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/30">
+                      <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{mostCommonSymptomCount} ครั้ง</p>
                 </motion.div>
               </div>
             </div>

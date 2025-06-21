@@ -1,650 +1,97 @@
-// Google Apps Script for iMedReserve Booking System (New Email)
-// Multi-purpose script for booking, dashboard, and student lookup
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
 
-// Global variables - ต้องเปลี่ยนเป็น Spreadsheet ID ใหม่
-const SPREADSHEET_ID = 'YOUR_NEW_SPREADSHEET_ID'; // เปลี่ยนเป็น ID ของ Spreadsheet ใหม่
-const BOOKING_SHEET_NAME = 'Bookings';
-const DATA_SHEET_NAME = 'Data';
-const DASHBOARD_SHEET_NAME = 'Data';
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
 
-// Cache settings
-const CACHE_DURATION = 300; // 5 minutes
-const MAX_RETRIES = 3;
-const TIMEOUT_MS = 30000; // 30 seconds
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
-/**
- * Main GET handler for all requests
- */
-function doGet(e) {
-  try {
-    console.log('=== doGet called ===');
-    console.log('Parameters:', e.parameter);
-    
-    const startTime = new Date().getTime();
-    const action = e.parameter.action || 'dashboard';
-    
-    console.log('Action:', action);
-    
-    let response;
-    
-    switch (action) {
-      case 'lookupStudent':
-        response = handleStudentLookup(e.parameter.studentId);
-        break;
-      case 'dashboard':
-        response = handleDashboardRequest();
-        break;
-      case 'bookings':
-      case 'getBookings':
-        response = handleBookingsRequest();
-        break;
-      case 'sheets':
-        response = getSheetNames();
-        break;
-      case 'health':
-        response = healthCheck();
-        break;
-      default:
-        response = { success: false, message: `Invalid action: ${action}` };
-    }
-    
-    const endTime = new Date().getTime();
-    console.log(`Request completed in ${endTime - startTime}ms`);
-    
-    return createResponse(response);
-    
-  } catch (error) {
-    console.error('doGet error:', error);
-    return createErrorResponse('Server error: ' + error.message);
-  }
-}
+export const metadata: Metadata = {
+  title: "iMedReserve",
+  description: "A modern login page with dark mode",
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#6366f1' },
+    { media: '(prefers-color-scheme: dark)', color: '#1e293b' },
+  ],
+  colorScheme: 'light dark',
+};
 
-/**
- * Main POST handler for booking submissions
- */
-function doPost(e) {
-  try {
-    console.log('=== doPost called ===');
-    console.log('Post data:', e.postData);
-    
-    const startTime = new Date().getTime();
-    
-    // Parse JSON data
-    let data;
-    try {
-      data = JSON.parse(e.postData.contents);
-      console.log('Parsed data:', data);
-    } catch (parseError) {
-      console.error('JSON parse error:', parseError);
-      return createErrorResponse('Invalid JSON data');
-    }
-    
-    // Check if it's a student lookup request
-    if (data.action === 'lookupStudent') {
-      const response = handleStudentLookup(data.studentId);
-      const endTime = new Date().getTime();
-      console.log(`Student lookup completed in ${endTime - startTime}ms`);
-      return createResponse(response);
-    }
-    
-    // Handle booking submission
-    const response = handleBookingSubmission(data);
-    const endTime = new Date().getTime();
-    console.log(`Booking submission completed in ${endTime - startTime}ms`);
-    
-    return createResponse(response);
-    
-  } catch (error) {
-    console.error('doPost error:', error);
-    return createErrorResponse('Server error: ' + error.message);
-  }
-}
-
-/**
- * Get sheet names for debugging
- */
-function getSheetNames() {
-  try {
-    console.log('=== Getting Sheet Names ===');
-    
-    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sheets = spreadsheet.getSheets();
-    
-    const sheetNames = sheets.map(sheet => sheet.getName());
-    console.log('Available sheet names:', sheetNames);
-    
-    return {
-      success: true,
-      sheetNames: sheetNames,
-      count: sheetNames.length,
-      expectedSheets: {
-        booking: BOOKING_SHEET_NAME,
-        data: DATA_SHEET_NAME,
-        dashboard: DASHBOARD_SHEET_NAME
-      }
-    };
-    
-  } catch (error) {
-    console.error('Error getting sheet names:', error);
-    return {
-      success: false,
-      message: 'Error getting sheet names: ' + error.message
-    };
-  }
-}
-
-/**
- * Handle student lookup requests
- */
-function handleStudentLookup(studentId) {
-  try {
-    console.log('=== Student Lookup ===');
-    console.log('Student ID:', studentId);
-    console.log('Student ID type:', typeof studentId);
-    console.log('Student ID length:', studentId ? studentId.length : 'null');
-    
-    if (!studentId) {
-      console.log('Student ID is empty or null');
-      return { success: false, message: 'Student ID is required' };
-    }
-    
-    // Clean student ID
-    const cleanStudentId = studentId.toString().trim();
-    console.log('Clean Student ID:', cleanStudentId);
-    
-    if (cleanStudentId.length === 0) {
-      console.log('Student ID is empty after cleaning');
-      return { success: false, message: 'Student ID cannot be empty' };
-    }
-    
-    // Get spreadsheet
-    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
-    console.log('Spreadsheet opened successfully');
-    
-    // Get data sheet
-    const dataSheet = spreadsheet.getSheetByName(DATA_SHEET_NAME);
-    if (!dataSheet) {
-      console.error('Data sheet not found:', DATA_SHEET_NAME);
-      const allSheets = spreadsheet.getSheets();
-      const availableSheets = allSheets.map(s => s.getName());
-      console.log('Available sheets:', availableSheets);
-      return { 
-        success: false, 
-        message: `Data sheet '${DATA_SHEET_NAME}' not found. Available sheets: ${availableSheets.join(', ')}` 
-      };
-    }
-    console.log('Data sheet found');
-    
-    // Get all data
-    const dataRange = dataSheet.getDataRange();
-    const values = dataRange.getValues();
-    console.log('Total rows in data sheet:', values.length);
-    
-    if (values.length <= 1) {
-      console.log('No data rows found (only header)');
-      return { success: false, message: 'No student data available' };
-    }
-    
-    // Get headers (first row)
-    const headers = values[0];
-    console.log('Headers:', headers);
-    
-    // Find column indices
-    const idColumnIndex = headers.findIndex(header => {
-      const headerStr = header.toString().toLowerCase();
-      return headerStr.includes('id') || 
-             headerStr.includes('เลขประจำตัว') ||
-             headerStr.includes('รหัสนักเรียน') ||
-             headerStr.includes('student id');
-    });
-    
-    const nameColumnIndex = headers.findIndex(header => {
-      const headerStr = header.toString().toLowerCase();
-      return headerStr.includes('name') || 
-             headerStr.includes('ชื่อ') ||
-             headerStr.includes('ชื่อ-นามสกุล') ||
-             headerStr.includes('full name');
-    });
-    
-    const classColumnIndex = headers.findIndex(header => {
-      const headerStr = header.toString().toLowerCase();
-      return headerStr.includes('class') || 
-             headerStr.includes('ชั้น') ||
-             headerStr.includes('grade') ||
-             headerStr.includes('ระดับชั้น');
-    });
-    
-    const numberColumnIndex = headers.findIndex(header => {
-      const headerStr = header.toString().toLowerCase();
-      return headerStr.includes('number') || 
-             headerStr.includes('เลขที่') ||
-             headerStr.includes('no') ||
-             headerStr.includes('ลำดับ');
-    });
-    
-    console.log('Column indices:', {
-      id: idColumnIndex,
-      name: nameColumnIndex,
-      class: classColumnIndex,
-      number: numberColumnIndex
-    });
-    
-    if (idColumnIndex === -1) {
-      console.error('ID column not found');
-      console.log('Available headers:', headers);
-      return { 
-        success: false, 
-        message: `ID column not found. Available headers: ${headers.join(', ')}` 
-      };
-    }
-    
-    // Search for student
-    console.log('Searching for student ID:', cleanStudentId);
-    let foundStudent = null;
-    
-    for (let i = 1; i < values.length; i++) {
-      const row = values[i];
-      const rowId = row[idColumnIndex];
-      
-      console.log(`Row ${i}: ID = "${rowId}" (type: ${typeof rowId})`);
-      
-      if (rowId && rowId.toString().trim() === cleanStudentId) {
-        console.log('Student found in row:', i);
-        foundStudent = {
-          studentId: rowId.toString().trim(),
-          name: nameColumnIndex >= 0 ? row[nameColumnIndex] || '' : '',
-          class: classColumnIndex >= 0 ? row[classColumnIndex] || '' : '',
-          number: numberColumnIndex >= 0 ? row[numberColumnIndex] || '' : ''
-        };
-        break;
-      }
-    }
-    
-    if (foundStudent) {
-      console.log('Found student:', foundStudent);
-      
-      // Parse full name into prefix, firstName, lastName
-      const fullName = foundStudent.name;
-      let prefix = '';
-      let firstName = '';
-      let lastName = '';
-      
-      if (fullName) {
-        const nameParts = fullName.split(' ');
-        if (nameParts.length >= 3) {
-          prefix = nameParts[0];
-          firstName = nameParts[1];
-          lastName = nameParts.slice(2).join(' ');
-        } else if (nameParts.length === 2) {
-          firstName = nameParts[0];
-          lastName = nameParts[1];
-        } else if (nameParts.length === 1) {
-          firstName = nameParts[0];
-        }
-      }
-      
-      const studentData = {
-        studentId: foundStudent.studentId,
-        grade: foundStudent.class,
-        name: foundStudent.name,
-        prefix: prefix,
-        firstName: firstName,
-        lastName: lastName,
-        number: foundStudent.number
-      };
-      
-      console.log('Processed student data:', studentData);
-      return { success: true, student: studentData };
-    } else {
-      console.log('Student not found');
-      return { success: false, message: 'Student not found' };
-    }
-    
-  } catch (error) {
-    console.error('Student lookup error:', error);
-    return { success: false, message: 'Error looking up student: ' + error.message };
-  }
-}
-
-/**
- * Handle booking submission
- */
-function handleBookingSubmission(data) {
-  try {
-    console.log('=== Booking Submission ===');
-    console.log('Booking data:', data);
-    
-    // Validate required fields
-    const requiredFields = ['date', 'period', 'studentId', 'grade', 'prefix', 'firstName', 'lastName', 'symptoms', 'treatment'];
-    for (const field of requiredFields) {
-      if (!data[field]) {
-        console.error('Missing required field:', field);
-        return { success: false, message: `Missing required field: ${field}` };
-      }
-    }
-    
-    // Get spreadsheet
-    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
-    
-    // Check if Bookings sheet exists, if not create it
-    let sheet = spreadsheet.getSheetByName(BOOKING_SHEET_NAME);
-    if (!sheet) {
-      console.log('Bookings sheet not found, creating new sheet...');
-      sheet = spreadsheet.insertSheet(BOOKING_SHEET_NAME);
-      
-      // Add headers in Thai
-      const headers = [
-        'วันที่เลือก',      // date
-        'คาบเรียนที่',      // period
-        'เลขประจำตัว',      // studentId
-        'ระดับชั้น',        // grade
-        'คำนำหน้า',         // prefix
-        'ชื่อ',            // firstName
-        'นามสกุล',         // lastName
-        'อาการ',           // symptoms
-        'วิธีรักษา',        // treatment
-        'imageLink',       // imageLink
-        'Timestamp'        // timestamp
-      ];
-      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-      console.log('Bookings sheet created with headers');
-    }
-    
-    // Prepare row data
-    const timestamp = new Date().toISOString();
-    const rowData = [
-      data.date,           // วันที่เลือก
-      data.period,         // คาบเรียนที่
-      data.studentId,      // เลขประจำตัว
-      data.grade,          // ระดับชั้น
-      data.prefix,         // คำนำหน้า
-      data.firstName,      // ชื่อ
-      data.lastName,       // นามสกุล
-      data.symptoms,       // อาการ
-      data.treatment,      // วิธีรักษา
-      data.imageLink || 'No image', // imageLink
-      timestamp           // Timestamp
-    ];
-    
-    console.log('Row data to insert:', rowData);
-    
-    // Append data to sheet
-    sheet.appendRow(rowData);
-    
-    console.log('Booking data inserted successfully');
-    return { success: true, message: 'Booking submitted successfully' };
-    
-  } catch (error) {
-    console.error('Booking submission error:', error);
-    return { success: false, message: 'Error submitting booking: ' + error.message };
-  }
-}
-
-/**
- * Handle dashboard data requests
- */
-function handleDashboardRequest() {
-  try {
-    console.log('=== Dashboard Request ===');
-    
-    // Get spreadsheet
-    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sheet = spreadsheet.getSheetByName(BOOKING_SHEET_NAME);
-    
-    if (!sheet) {
-      console.log('Bookings sheet not found, returning empty dashboard');
-      return { 
-        success: true, 
-        data: {
-          totalBookings: 0,
-          recentBookings: [],
-          symptoms: {},
-          monthlyData: {}
-        }
-      };
-    }
-    
-    // Get all data
-    const dataRange = sheet.getDataRange();
-    const values = dataRange.getValues();
-    
-    if (values.length <= 1) {
-      console.log('No booking data found');
-      return { 
-        success: true, 
-        data: {
-          totalBookings: 0,
-          recentBookings: [],
-          symptoms: {},
-          monthlyData: {}
-        }
-      };
-    }
-    
-    // Process data
-    const headers = values[0];
-    const bookings = values.slice(1);
-    
-    console.log('Total bookings:', bookings.length);
-    console.log('Headers:', headers);
-    
-    // Get recent bookings (last 10)
-    const recentBookings = bookings.slice(-10).map(row => {
-      const booking = {};
-      headers.forEach((header, index) => {
-        booking[header] = row[index];
-      });
-      return booking;
-    });
-    
-    // Count symptoms
-    const symptoms = {};
-    const symptomColumnIndex = headers.findIndex(h => h === 'อาการ');
-    
-    if (symptomColumnIndex !== -1) {
-      bookings.forEach(row => {
-        const symptom = row[symptomColumnIndex];
-        if (symptom) {
-          symptoms[symptom] = (symptoms[symptom] || 0) + 1;
-        }
-      });
-    }
-    
-    // Monthly data
-    const monthlyData = {};
-    const dateColumnIndex = headers.findIndex(h => h === 'วันที่เลือก');
-    
-    if (dateColumnIndex !== -1) {
-      bookings.forEach(row => {
-        const dateStr = row[dateColumnIndex];
-        if (dateStr) {
-          try {
-            const date = new Date(dateStr);
-            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            monthlyData[monthKey] = (monthlyData[monthKey] || 0) + 1;
-          } catch (e) {
-            console.warn('Invalid date:', dateStr);
-          }
-        }
-      });
-    }
-    
-    const dashboardData = {
-      totalBookings: bookings.length,
-      recentBookings: recentBookings,
-      symptoms: symptoms,
-      monthlyData: monthlyData
-    };
-    
-    console.log('Dashboard data prepared');
-    return { success: true, data: dashboardData };
-    
-  } catch (error) {
-    console.error('Dashboard request error:', error);
-    return { success: false, message: 'Error getting dashboard data: ' + error.message };
-  }
-}
-
-/**
- * Handle bookings list requests
- */
-function handleBookingsRequest() {
-  try {
-    console.log('=== Bookings Request ===');
-    
-    // Get spreadsheet
-    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sheet = spreadsheet.getSheetByName(BOOKING_SHEET_NAME);
-    
-    if (!sheet) {
-      console.log('Bookings sheet not found, returning empty list');
-      return { success: true, bookings: [] };
-    }
-    
-    // Get all data
-    const dataRange = sheet.getDataRange();
-    const values = dataRange.getValues();
-    
-    if (values.length <= 1) {
-      console.log('No booking data found');
-      return { success: true, bookings: [] };
-    }
-    
-    // Process data
-    const headers = values[0];
-    const bookings = values.slice(1).map(row => {
-      const booking = {};
-      headers.forEach((header, index) => {
-        booking[header] = row[index];
-      });
-      return booking;
-    });
-    
-    console.log('Bookings data prepared, count:', bookings.length);
-    console.log('Sample booking:', bookings[0]);
-    return { success: true, bookings: bookings };
-    
-  } catch (error) {
-    console.error('Bookings request error:', error);
-    return { success: false, message: 'Error getting bookings: ' + error.message };
-  }
-}
-
-/**
- * Create success response
- */
-function createResponse(data) {
-  console.log('Creating response:', data);
-  return ContentService.createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-/**
- * Create error response
- */
-function createErrorResponse(message) {
-  console.error('Creating error response:', message);
-  const errorData = { success: false, message: message };
-  return ContentService.createTextOutput(JSON.stringify(errorData))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-/**
- * Health check function
- */
-function healthCheck() {
-  try {
-    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const bookingSheet = spreadsheet.getSheetByName(BOOKING_SHEET_NAME);
-    const dataSheet = spreadsheet.getSheetByName(DATA_SHEET_NAME);
-    
-    const allSheets = spreadsheet.getSheets();
-    const sheetNames = allSheets.map(s => s.getName());
-    
-    return {
-      success: true,
-      message: 'Apps Script is healthy',
-      sheets: {
-        booking: !!bookingSheet,
-        data: !!dataSheet
-      },
-      availableSheets: sheetNames,
-      timestamp: new Date().toISOString()
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: 'Health check failed: ' + error.message,
-      timestamp: new Date().toISOString()
-    };
-  }
-}
-
-/**
- * Setup function to initialize the system
- */
-function setup() {
-  try {
-    console.log('=== Setting up iMedReserve System (New Email) ===');
-    
-    // Create Bookings sheet if it doesn't exist
-    const createResult = createBookingsSheet();
-    console.log('Create Bookings sheet result:', createResult);
-    
-    // Test health check
-    const healthResult = healthCheck();
-    console.log('Health check result:', healthResult);
-    
-    console.log('Setup completed successfully');
-    return { success: true, message: 'Setup completed successfully' };
-    
-  } catch (error) {
-    console.error('Setup error:', error);
-    return { success: false, message: 'Setup failed: ' + error.message };
-  }
-}
-
-/**
- * Create Bookings sheet if it doesn't exist
- */
-function createBookingsSheet() {
-  try {
-    console.log('=== Creating Bookings Sheet ===');
-    
-    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
-    
-    // Check if sheet already exists
-    let sheet = spreadsheet.getSheetByName(BOOKING_SHEET_NAME);
-    if (sheet) {
-      console.log('Bookings sheet already exists');
-      return { success: true, message: 'Bookings sheet already exists' };
-    }
-    
-    // Create new sheet
-    sheet = spreadsheet.insertSheet(BOOKING_SHEET_NAME);
-    
-    // Add headers in Thai
-    const headers = [
-      'วันที่เลือก',      // date
-      'คาบเรียนที่',      // period
-      'เลขประจำตัว',      // studentId
-      'ระดับชั้น',        // grade
-      'คำนำหน้า',         // prefix
-      'ชื่อ',            // firstName
-      'นามสกุล',         // lastName
-      'อาการ',           // symptoms
-      'วิธีรักษา',        // treatment
-      'imageLink',       // imageLink
-      'Timestamp'        // timestamp
-    ];
-    
-    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-    
-    console.log('Bookings sheet created successfully');
-    return { success: true, message: 'Bookings sheet created successfully' };
-    
-  } catch (error) {
-    console.error('Error creating Bookings sheet:', error);
-    return { success: false, message: 'Error creating Bookings sheet: ' + error.message };
-  }
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta name="color-scheme" content="light dark" />
+        <meta name="theme-color" content="#6366f1" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#1e293b" media="(prefers-color-scheme: dark)" />
+      </head>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
+      >
+        {children}
+        {/* Space Footer - compact, more animation */}
+        <footer className="relative w-full bg-white dark:bg-gradient-to-br dark:from-indigo-950 dark:via-purple-950 dark:to-black border-t-0 pt-6 pb-4 flex flex-col items-center justify-end overflow-hidden min-h-[120px]" style={{marginTop: 'auto'}}>
+          {/* Animated space elements */}
+          <div className="absolute inset-0 z-0 pointer-events-none">
+            {/* Multiple shooting stars */}
+            <svg className="absolute left-1/5 top-2 animate-shooting-star" width="80" height="6"><line x1="0" y1="3" x2="80" y2="3" stroke="#fff" strokeWidth="2" strokeDasharray="8 6" opacity="0.7"/></svg>
+            <svg className="absolute left-1/2 top-8 animate-shooting-star2" width="100" height="7"><line x1="0" y1="3.5" x2="100" y2="3.5" stroke="#a5b4fc" strokeWidth="2" strokeDasharray="10 8" opacity="0.5"/></svg>
+            <svg className="absolute right-1/4 top-12 animate-shooting-star3" width="60" height="5"><line x1="0" y1="2.5" x2="60" y2="2.5" stroke="#fbcfe8" strokeWidth="2" strokeDasharray="6 5" opacity="0.5"/></svg>
+            {/* Planets & rings */}
+            <span className="absolute left-8 bottom-6 animate-planet-spin">
+              <span className="block w-7 h-7 bg-gradient-to-br from-indigo-400 via-blue-400 to-purple-500 rounded-full shadow-xl border-2 border-white/30" />
+              <span className="block w-10 h-1 bg-gradient-to-r from-white/30 to-indigo-300/30 rounded-full absolute left-[-6px] top-3 rotate-12 opacity-70" />
+            </span>
+            <span className="absolute right-10 top-6 animate-planet-bounce">
+              <span className="block w-5 h-5 bg-gradient-to-br from-yellow-200 via-pink-300 to-purple-400 rounded-full shadow-md border-2 border-white/20" />
+              <span className="block w-8 h-1 bg-gradient-to-r from-pink-100/60 to-purple-200/60 rounded-full absolute left-[-4px] top-2 rotate-6 opacity-60" />
+            </span>
+            {/* Comet */}
+            <span className="absolute left-1/3 top-1/2 animate-comet">
+              <span className="block w-2 h-2 bg-white rounded-full shadow-md" />
+              <span className="block w-10 h-1 bg-gradient-to-r from-white/80 to-transparent rounded-full absolute left-2 top-0.5 opacity-70" />
+            </span>
+            {/* Meteor */}
+            <span className="absolute right-1/5 bottom-8 animate-meteor">
+              <span className="block w-1.5 h-1.5 bg-blue-200 rounded-full shadow-sm" />
+              <span className="block w-6 h-0.5 bg-gradient-to-r from-blue-200/80 to-transparent rounded-full absolute left-1 top-0.5 opacity-60" />
+            </span>
+            {/* Small twinkling stars */}
+            {[...Array(24)].map((_,i)=>(
+              <span key={i} className={`absolute bg-white rounded-full animate-twinkle`} style={{
+                left: `${Math.random()*100}%`,
+                top: `${Math.random()*100}%`,
+                width: `${Math.random()*1.5+1}px`,
+                height: `${Math.random()*1.5+1}px`,
+                opacity: Math.random()*0.5+0.4,
+                animationDelay: `${Math.random()*3}s`
+              }} />
+            ))}
+          </div>
+          {/* Footer text */}
+          <div className="relative z-10 flex flex-col items-center">
+            <span className="footer-text text-base font-semibold text-white drop-shadow-lg mb-1">มีปัญหาติดต่อ ครูสุรีพร แย้มบู่</span>
+            <span className="footer-text text-xs text-white">© 2025 ผู้จัดทำ</span>
+          </div>
+        </footer>
+      </body>
+    </html>
+  );
 }

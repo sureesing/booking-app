@@ -2,6 +2,54 @@ import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { Readable } from 'stream';
 
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const action = searchParams.get('action');
+    
+    if (action === 'getBookings') {
+      const scriptUrl = process.env.NEXT_PUBLIC_SCRIPT_URL;
+      if (!scriptUrl) {
+        return NextResponse.json(
+          { success: false, message: 'Missing NEXT_PUBLIC_SCRIPT_URL environment variable' },
+          { status: 500 }
+        );
+      }
+
+      const response = await fetch(`${scriptUrl}?action=getBookings`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return NextResponse.json(data);
+    }
+
+    return NextResponse.json(
+      { success: false, message: 'Invalid action' },
+      { status: 400 }
+    );
+  } catch (error: unknown) {
+    let message = 'Unknown error';
+    if (error instanceof Error) {
+      message = error.message;
+    } else if (typeof error === 'string') {
+      message = error;
+    }
+    console.error('GET Proxy error:', message);
+    return NextResponse.json(
+      { success: false, message: 'Server error: ' + message },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Validate environment variables
@@ -185,7 +233,7 @@ export async function OPTIONS() {
     status: 200,
     headers: {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST',
+      'Access-Control-Allow-Methods': 'GET, POST',
       'Access-Control-Allow-Headers': 'Content-Type',
     },
   });
