@@ -1,4 +1,4 @@
-// Google Apps Script for iMedReserve Booking System (Complete Version)
+// Google Apps Script for iMedReserve Booking System (Complete Version with Fixed Name Parsing)
 // Multi-purpose script for booking, dashboard, and student lookup
 
 // Global variables - ต้องเปลี่ยนเป็น Spreadsheet ID ใหม่
@@ -50,11 +50,15 @@ function doGet(e) {
     const endTime = new Date().getTime();
     console.log(`Request completed in ${endTime - startTime}ms`);
     
-    return createResponse(response);
+    // Return JSON response directly
+    return ContentService.createTextOutput(JSON.stringify(response))
+      .setMimeType(ContentService.MimeType.JSON);
     
   } catch (error) {
     console.error('doGet error:', error);
-    return createErrorResponse('Server error: ' + error.message);
+    const errorResponse = { success: false, message: 'Server error: ' + error.message };
+    return ContentService.createTextOutput(JSON.stringify(errorResponse))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
@@ -75,7 +79,9 @@ function doPost(e) {
       console.log('Parsed data:', data);
     } catch (parseError) {
       console.error('JSON parse error:', parseError);
-      return createErrorResponse('Invalid JSON data');
+      const errorResponse = { success: false, message: 'Invalid JSON data' };
+      return ContentService.createTextOutput(JSON.stringify(errorResponse))
+        .setMimeType(ContentService.MimeType.JSON);
     }
     
     // Check if it's a student lookup request
@@ -83,7 +89,8 @@ function doPost(e) {
       const response = handleStudentLookup(data.studentId);
       const endTime = new Date().getTime();
       console.log(`Student lookup completed in ${endTime - startTime}ms`);
-      return createResponse(response);
+      return ContentService.createTextOutput(JSON.stringify(response))
+        .setMimeType(ContentService.MimeType.JSON);
     }
     
     // Handle booking submission
@@ -91,11 +98,14 @@ function doPost(e) {
     const endTime = new Date().getTime();
     console.log(`Booking submission completed in ${endTime - startTime}ms`);
     
-    return createResponse(response);
+    return ContentService.createTextOutput(JSON.stringify(response))
+      .setMimeType(ContentService.MimeType.JSON);
     
   } catch (error) {
     console.error('doPost error:', error);
-    return createErrorResponse('Server error: ' + error.message);
+    const errorResponse = { success: false, message: 'Server error: ' + error.message };
+    return ContentService.createTextOutput(JSON.stringify(errorResponse))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
@@ -132,7 +142,7 @@ function getSheetNames() {
 }
 
 /**
- * Handle student lookup requests
+ * Handle student lookup requests - รองรับรูปแบบฐานข้อมูล ID, name, class, number
  */
 function handleStudentLookup(studentId) {
   try {
@@ -157,6 +167,7 @@ function handleStudentLookup(studentId) {
     if (!dataSheet) {
       const allSheets = spreadsheet.getSheets();
       const availableSheets = allSheets.map(s => s.getName());
+      console.log('Available sheets:', availableSheets);
       return { 
         success: false, 
         message: `Data sheet '${DATA_SHEET_NAME}' not found. Available sheets: ${availableSheets.join(', ')}` 
@@ -167,6 +178,9 @@ function handleStudentLookup(studentId) {
     const dataRange = dataSheet.getDataRange();
     const values = dataRange.getValues();
     
+    console.log('Total rows in Data sheet:', values.length);
+    console.log('Headers:', values[0]);
+    
     if (values.length <= 1) {
       return { success: false, message: 'No student data available' };
     }
@@ -174,10 +188,10 @@ function handleStudentLookup(studentId) {
     // Get headers (first row)
     const headers = values[0];
     
-    // Find column indices
+    // Find column indices - รองรับรูปแบบฐานข้อมูลที่มี ID, name, class, number
     const idColumnIndex = headers.findIndex(header => {
       const headerStr = header.toString().toLowerCase();
-      return headerStr.includes('id') || 
+      return headerStr === 'id' || 
              headerStr.includes('เลขประจำตัว') ||
              headerStr.includes('รหัสนักเรียน') ||
              headerStr.includes('student id');
@@ -185,7 +199,7 @@ function handleStudentLookup(studentId) {
     
     const nameColumnIndex = headers.findIndex(header => {
       const headerStr = header.toString().toLowerCase();
-      return headerStr.includes('name') || 
+      return headerStr === 'name' || 
              headerStr.includes('ชื่อ') ||
              headerStr.includes('ชื่อ-นามสกุล') ||
              headerStr.includes('full name');
@@ -193,7 +207,7 @@ function handleStudentLookup(studentId) {
     
     const classColumnIndex = headers.findIndex(header => {
       const headerStr = header.toString().toLowerCase();
-      return headerStr.includes('class') || 
+      return headerStr === 'class' || 
              headerStr.includes('ชั้น') ||
              headerStr.includes('grade') ||
              headerStr.includes('ระดับชั้น');
@@ -201,10 +215,17 @@ function handleStudentLookup(studentId) {
     
     const numberColumnIndex = headers.findIndex(header => {
       const headerStr = header.toString().toLowerCase();
-      return headerStr.includes('number') || 
+      return headerStr === 'number' || 
              headerStr.includes('เลขที่') ||
              headerStr.includes('no') ||
              headerStr.includes('ลำดับ');
+    });
+    
+    console.log('Column indices found:', {
+      idColumnIndex,
+      nameColumnIndex,
+      classColumnIndex,
+      numberColumnIndex
     });
     
     if (idColumnIndex === -1) {
@@ -217,40 +238,81 @@ function handleStudentLookup(studentId) {
     // Search for student
     let foundStudent = null;
     
+    console.log('Searching for student ID:', cleanStudentId);
+    console.log('First few rows of data:');
+    for (let i = 1; i < Math.min(6, values.length); i++) {
+      const row = values[i];
+      const rowId = row[idColumnIndex];
+      console.log(`Row ${i}: ID="${rowId}" (type: ${typeof rowId})`);
+    }
+    
     for (let i = 1; i < values.length; i++) {
       const row = values[i];
       const rowId = row[idColumnIndex];
       
-      if (rowId && rowId.toString().trim() === cleanStudentId) {
+      // Convert both to string and trim for comparison
+      const rowIdStr = rowId ? rowId.toString().trim() : '';
+      const searchIdStr = cleanStudentId.toString().trim();
+      
+      console.log(`Comparing: "${rowIdStr}" with "${searchIdStr}"`);
+      
+      if (rowIdStr === searchIdStr) {
         foundStudent = {
-          studentId: rowId.toString().trim(),
+          studentId: rowIdStr,
           name: nameColumnIndex >= 0 ? row[nameColumnIndex] || '' : '',
           class: classColumnIndex >= 0 ? row[classColumnIndex] || '' : '',
           number: numberColumnIndex >= 0 ? row[numberColumnIndex] || '' : ''
         };
+        console.log('Found student:', foundStudent);
         break;
       }
     }
     
     if (foundStudent) {
-      // Parse full name into prefix, firstName, lastName
+      // Parse full name into prefix, firstName, lastName - แก้ไขการแยกคำนำหน้าให้ถูกต้อง
       const fullName = foundStudent.name;
       let prefix = '';
       let firstName = '';
       let lastName = '';
       
       if (fullName) {
-        const nameParts = fullName.split(' ');
-        if (nameParts.length >= 3) {
-          prefix = nameParts[0];
-          firstName = nameParts[1];
-          lastName = nameParts.slice(2).join(' ');
-        } else if (nameParts.length === 2) {
-          firstName = nameParts[0];
-          lastName = nameParts[1];
-        } else if (nameParts.length === 1) {
-          firstName = nameParts[0];
+        console.log('=== Name Parsing Debug ===');
+        console.log('Full name:', fullName);
+        
+        // Define all possible prefixes
+        const prefixes = ['เด็กชาย', 'เด็กหญิง', 'นาย', 'นางสาว', 'นาง', 'ดร.', 'อาจารย์'];
+        
+        // Check if the name starts with any prefix
+        let nameWithoutPrefix = fullName;
+        for (const prefixOption of prefixes) {
+          if (fullName.startsWith(prefixOption)) {
+            prefix = prefixOption;
+            nameWithoutPrefix = fullName.substring(prefixOption.length).trim();
+            console.log('Found prefix:', prefix);
+            console.log('Name without prefix:', nameWithoutPrefix);
+            break;
+          }
         }
+        
+        // Split the remaining name into firstName and lastName
+        if (nameWithoutPrefix) {
+          const nameParts = nameWithoutPrefix.split(' ');
+          console.log('Name parts after prefix removal:', nameParts);
+          
+          if (nameParts.length >= 2) {
+            // firstName lastName
+            firstName = nameParts[0];
+            lastName = nameParts.slice(1).join(' ');
+            console.log('Pattern: firstName lastName');
+          } else if (nameParts.length === 1) {
+            // firstName only
+            firstName = nameParts[0];
+            lastName = '';
+            console.log('Pattern: firstName only');
+          }
+        }
+        
+        console.log('Final parsed result:', { prefix, firstName, lastName });
       }
       
       const studentData = {
@@ -263,8 +325,10 @@ function handleStudentLookup(studentId) {
         number: foundStudent.number
       };
       
+      console.log('Processed student data:', studentData);
       return { success: true, student: studentData };
     } else {
+      console.log('Student not found in database');
       return { success: false, message: 'Student not found' };
     }
     
@@ -523,25 +587,6 @@ function handleBookingsRequest() {
 }
 
 /**
- * Create success response
- */
-function createResponse(data) {
-  console.log('Creating response:', data);
-  return ContentService.createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-/**
- * Create error response
- */
-function createErrorResponse(message) {
-  console.error('Creating error response:', message);
-  const errorData = { success: false, message: message };
-  return ContentService.createTextOutput(JSON.stringify(errorData))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-/**
  * Health check function
  */
 function healthCheck() {
@@ -741,3 +786,214 @@ function addSampleData() {
     return { success: false, message: 'Error adding sample data: ' + error.message };
   }
 }
+
+/**
+ * Test function for student lookup
+ */
+function testStudentLookup() {
+  const result = handleStudentLookup('46687');
+  console.log('Test result:', result);
+  return result;
+}
+
+/**
+ * Test function for dashboard
+ */
+function testDashboard() {
+  const result = handleDashboardRequest();
+  console.log('Dashboard test result:', result);
+  return result;
+}
+
+/**
+ * Test function for bookings
+ */
+function testBookings() {
+  const result = handleBookingsRequest();
+  console.log('Bookings test result:', result);
+  return result;
+}
+
+/**
+ * Debug function to check Data sheet structure
+ */
+function debugDataSheet() {
+  try {
+    console.log('=== Debug Data Sheet ===');
+    
+    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const dataSheet = spreadsheet.getSheetByName(DATA_SHEET_NAME);
+    
+    if (!dataSheet) {
+      console.log('Data sheet not found');
+      return { success: false, message: 'Data sheet not found' };
+    }
+    
+    const dataRange = dataSheet.getDataRange();
+    const values = dataRange.getValues();
+    
+    console.log('Total rows:', values.length);
+    console.log('Headers:', values[0]);
+    
+    if (values.length <= 1) {
+      return { success: true, message: 'No data found', rows: 0 };
+    }
+    
+    // Show first 5 rows of data
+    const sampleData = values.slice(1, 6).map((row, index) => {
+      const rowData = {};
+      values[0].forEach((header, colIndex) => {
+        rowData[header] = row[colIndex];
+      });
+      return { rowNumber: index + 2, data: rowData };
+    });
+    
+    return {
+      success: true,
+      totalRows: values.length - 1,
+      headers: values[0],
+      sampleData: sampleData
+    };
+    
+  } catch (error) {
+    console.error('Debug error:', error);
+    return { success: false, message: 'Debug failed: ' + error.message };
+  }
+}
+
+/**
+ * Test function to search for specific student ID
+ */
+function testSearchStudent(studentId) {
+  try {
+    console.log('=== Test Search Student ===');
+    console.log('Searching for ID:', studentId);
+    
+    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const dataSheet = spreadsheet.getSheetByName(DATA_SHEET_NAME);
+    
+    if (!dataSheet) {
+      return { success: false, message: 'Data sheet not found' };
+    }
+    
+    const dataRange = dataSheet.getDataRange();
+    const values = dataRange.getValues();
+    
+    if (values.length <= 1) {
+      return { success: false, message: 'No data found' };
+    }
+    
+    const headers = values[0];
+    console.log('Headers:', headers);
+    
+    // Find ID column
+    const idColumnIndex = headers.findIndex(header => {
+      const headerStr = header.toString().toLowerCase();
+      return headerStr === 'id' || 
+             headerStr.includes('เลขประจำตัว') ||
+             headerStr.includes('รหัสนักเรียน') ||
+             headerStr.includes('student id');
+    });
+    
+    if (idColumnIndex === -1) {
+      return { success: false, message: 'ID column not found' };
+    }
+    
+    console.log('ID column index:', idColumnIndex);
+    console.log('ID column name:', headers[idColumnIndex]);
+    
+    // Search for student
+    for (let i = 1; i < values.length; i++) {
+      const row = values[i];
+      const rowId = row[idColumnIndex];
+      const rowIdStr = rowId ? rowId.toString().trim() : '';
+      const searchIdStr = studentId.toString().trim();
+      
+      console.log(`Row ${i}: "${rowIdStr}" vs "${searchIdStr}"`);
+      
+      if (rowIdStr === searchIdStr) {
+        const studentData = {};
+        headers.forEach((header, index) => {
+          studentData[header] = row[index];
+        });
+        
+        return {
+          success: true,
+          found: true,
+          rowNumber: i + 1,
+          studentData: studentData
+        };
+      }
+    }
+    
+    return {
+      success: true,
+      found: false,
+      message: 'Student not found'
+    };
+    
+  } catch (error) {
+    console.error('Test search error:', error);
+    return { success: false, message: 'Test search failed: ' + error.message };
+  }
+}
+
+/**
+ * Test function for name parsing
+ */
+function testNameParsing() {
+  const testNames = [
+    'นายทดสอบ ทดสอบ',
+    'เด็กชายเกียรติศักดิ์ ภัชสิงห์สูง',
+    'เด็กชายสมชาย ใจดี',
+    'นางสาวสมหญิง รักดี',
+    'สมชาย ใจดี',
+    'สมหญิง',
+    'ดร.สมชาย ใจดี มาก'
+  ];
+  
+  console.log('=== Testing Name Parsing ===');
+  
+  testNames.forEach(fullName => {
+    console.log('\n--- Testing:', fullName, '---');
+    
+    let prefix = '';
+    let firstName = '';
+    let lastName = '';
+    
+    // Define all possible prefixes
+    const prefixes = ['เด็กชาย', 'เด็กหญิง', 'นาย', 'นางสาว', 'นาง', 'ดร.', 'อาจารย์'];
+    
+    // Check if the name starts with any prefix
+    let nameWithoutPrefix = fullName;
+    for (const prefixOption of prefixes) {
+      if (fullName.startsWith(prefixOption)) {
+        prefix = prefixOption;
+        nameWithoutPrefix = fullName.substring(prefixOption.length).trim();
+        console.log('Found prefix:', prefix);
+        console.log('Name without prefix:', nameWithoutPrefix);
+        break;
+      }
+    }
+    
+    // Split the remaining name into firstName and lastName
+    if (nameWithoutPrefix) {
+      const nameParts = nameWithoutPrefix.split(' ');
+      console.log('Name parts after prefix removal:', nameParts);
+      
+      if (nameParts.length >= 2) {
+        // firstName lastName
+        firstName = nameParts[0];
+        lastName = nameParts.slice(1).join(' ');
+        console.log('Pattern: firstName lastName');
+      } else if (nameParts.length === 1) {
+        // firstName only
+        firstName = nameParts[0];
+        lastName = '';
+        console.log('Pattern: firstName only');
+      }
+    }
+    
+    console.log('Result:', { prefix, firstName, lastName });
+  });
+} 
