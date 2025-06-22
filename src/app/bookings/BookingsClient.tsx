@@ -521,7 +521,7 @@ export default function BookingsClient() {
                   <div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
                       <SortAsc className="w-4 h-4 mr-2" />
-                      เรียงลำดับ
+                      เรียงลำดับบ
                     </h3>
                     <div className="space-y-2">
                       <label className="flex items-center cursor-pointer">
