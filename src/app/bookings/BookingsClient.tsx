@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { Calendar, Moon, Sun, LayoutDashboard, Search, User } from 'lucide-react';
+import { Calendar, Moon, Sun, LayoutDashboard, Search, User, Filter, Clock, SortAsc, SortDesc } from 'lucide-react';
 
 interface Booking {
   firstName: string;
@@ -12,11 +12,18 @@ interface Booking {
   symptoms?: string;
   treatment?: string;
   timestamp?: string;
+  date?: string;
 }
 
 interface TimeSlot {
   display: string;
   value: string;
+}
+
+interface FilterState {
+  sortBy: 'newest' | 'oldest';
+  timePeriod: 'all' | '1day' | '3days' | '1week' | '1month' | '1year';
+  periods: string[];
 }
 
 export default function BookingsClient() {
@@ -26,7 +33,12 @@ export default function BookingsClient() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [filterTimeSlot, setFilterTimeSlot] = useState<string>('all');
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [filters, setFilters] = useState<FilterState>({
+    sortBy: 'newest',
+    timePeriod: 'all',
+    periods: []
+  });
   const router = useRouter();
 
   const { scrollYProgress } = useScroll();
@@ -81,6 +93,7 @@ export default function BookingsClient() {
             symptoms: booking.symptoms as string || '',
             treatment: booking.treatment as string || '',
             timestamp: (booking.timestamp && booking.timestamp !== 'N/A') ? booking.timestamp as string : undefined,
+            date: booking.date as string || '',
           })) : [];
           setBookings(mappedBookings);
         } else {
@@ -97,24 +110,34 @@ export default function BookingsClient() {
     fetchBookings();
   }, []);
 
-  // Define time slots consistent with BookingClient
+  // Define time slots
   const timeSlots: TimeSlot[] = [
-    { display: 'ทุกช่วงเวลา', value: 'all' },
-    { display: 'ล่าสุด', value: 'recent' },
-    { display: 'คาบ 0', value: '07:30-08:00' },
-    { display: 'คาบ 1', value: '08:30-09:30' },
-    { display: 'คาบ 2', value: '09:30-10:30' },
-    { display: 'คาบ 3', value: '10:30-11:30' },
-    { display: 'คาบ 4', value: '11:30-12:30' },
-    { display: 'คาบ 5', value: '12:30-13:30' },
-    { display: 'คาบ 6', value: '13:30-14:30' },
-    { display: 'คาบ 7', value: '14:30-15:30' },
-    { display: 'คาบ 8', value: '15:30-16:30' },
+    { display: 'คาบ 0', value: 'คาบ 0' },
+    { display: 'คาบ 1', value: 'คาบ 1' },
+    { display: 'คาบ 2', value: 'คาบ 2' },
+    { display: 'คาบ 3', value: 'คาบ 3' },
+    { display: 'คาบ 4', value: 'คาบ 4' },
+    { display: 'คาบ 5', value: 'คาบ 5' },
+    { display: 'คาบ 6', value: 'คาบ 6' },
+    { display: 'คาบ 7', value: 'คาบ 7' },
+    { display: 'คาบ 8', value: 'คาบ 8' },
+    { display: 'คาบ 9', value: 'คาบ 9' },
+  ];
+
+  // Define time periods
+  const timePeriods = [
+    { display: 'ทั้งหมด', value: 'all' },
+    { display: '1 วันที่แล้ว', value: '1day' },
+    { display: '3 วันที่แล้ว', value: '3days' },
+    { display: '1 อาทิตย์ที่แล้ว', value: '1week' },
+    { display: '1 เดือนที่แล้ว', value: '1month' },
+    { display: '1 ปีที่แล้ว', value: '1year' },
   ];
 
   // Filter and search bookings
   const filteredBookings = bookings
     .filter((booking) => {
+      // Search filter
       const matchesSearch = (
         booking.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         booking.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -122,23 +145,73 @@ export default function BookingsClient() {
         (booking.symptoms && booking.symptoms.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (booking.treatment && booking.treatment.toLowerCase().includes(searchTerm.toLowerCase()))
       );
-      const matchesFilter =
-        filterTimeSlot === 'all' ||
-        (filterTimeSlot === 'recent' ? true : booking.timeSlot === filterTimeSlot);
-      return matchesSearch && matchesFilter;
+
+      // Period filter
+      const matchesPeriod = filters.periods.length === 0 || filters.periods.includes(booking.timeSlot);
+
+      // Time period filter
+      let matchesTimePeriod = true;
+      if (filters.timePeriod !== 'all' && booking.timestamp) {
+        const bookingDate = new Date(booking.timestamp);
+        const now = new Date();
+        const diffTime = Math.abs(now.getTime() - bookingDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        switch (filters.timePeriod) {
+          case '1day':
+            matchesTimePeriod = diffDays <= 1;
+            break;
+          case '3days':
+            matchesTimePeriod = diffDays <= 3;
+            break;
+          case '1week':
+            matchesTimePeriod = diffDays <= 7;
+            break;
+          case '1month':
+            matchesTimePeriod = diffDays <= 30;
+            break;
+          case '1year':
+            matchesTimePeriod = diffDays <= 365;
+            break;
+        }
+      }
+
+      return matchesSearch && matchesPeriod && matchesTimePeriod;
     })
     .sort((a, b) => {
-      if (filterTimeSlot === 'recent') {
-        const dateA = a.timestamp ? new Date(a.timestamp) : new Date(0);
-        const dateB = b.timestamp ? new Date(b.timestamp) : new Date(0);
-        return dateB.getTime() - dateA.getTime();
-      }
-      return 0;
+      if (!a.timestamp || !b.timestamp) return 0;
+      const dateA = new Date(a.timestamp);
+      const dateB = new Date(b.timestamp);
+      return filters.sortBy === 'newest' 
+        ? dateB.getTime() - dateA.getTime()
+        : dateA.getTime() - dateB.getTime();
     });
 
-  const finalBookings = filterTimeSlot === 'recent'
-    ? filteredBookings.slice(0, 10)
-    : filteredBookings;
+  // Handle filter changes
+  const handleSortChange = (sortBy: 'newest' | 'oldest') => {
+    setFilters(prev => ({ ...prev, sortBy }));
+  };
+
+  const handleTimePeriodChange = (timePeriod: string) => {
+    setFilters(prev => ({ ...prev, timePeriod: timePeriod as any }));
+  };
+
+  const handlePeriodToggle = (period: string) => {
+    setFilters(prev => ({
+      ...prev,
+      periods: prev.periods.includes(period)
+        ? prev.periods.filter(p => p !== period)
+        : [...prev.periods, period]
+    }));
+  };
+
+  const clearAllFilters = () => {
+    setFilters({
+      sortBy: 'newest',
+      timePeriod: 'all',
+      periods: []
+    });
+  };
 
   const handleToggle = () => {
     setIsDark((prev) => !prev);
@@ -275,11 +348,12 @@ export default function BookingsClient() {
           initial={{ opacity: 0, y: 50, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="w-full max-w-4xl p-3 sm:p-6 md:p-8 lg:p-10 rounded-2xl sm:rounded-3xl bg-white dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500"
+          className="w-full max-w-6xl p-3 sm:p-6 md:p-8 lg:p-10 rounded-2xl sm:rounded-3xl bg-white dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500"
         >
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400 mb-4 sm:mb-6 md:mb-8 tracking-tight">
             ประวัติการบันทึก
           </h2>
+          
           <AnimatePresence>
             {error && (
               <motion.p
@@ -293,7 +367,9 @@ export default function BookingsClient() {
               </motion.p>
             )}
           </AnimatePresence>
-          <div className="max-w-4xl w-full mx-auto mt-6 flex flex-col sm:flex-row gap-3 px-2">
+
+          {/* Search Bar */}
+          <div className="max-w-4xl w-full mx-auto mb-6 flex flex-col sm:flex-row gap-3 px-2">
             <div className="relative flex-1">
               <input
                 type="text"
@@ -304,16 +380,126 @@ export default function BookingsClient() {
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             </div>
-            <select
-              value={filterTimeSlot}
-              onChange={(e) => setFilterTimeSlot(e.target.value)}
-              className="px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base shadow-sm"
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowFilters(!showFilters)}
+              className="px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-950 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base shadow-sm flex items-center space-x-2"
             >
-              {timeSlots.map((slot) => (
-                <option key={slot.value} value={slot.value}>{slot.display}</option>
-              ))}
-            </select>
+              <Filter className="w-5 h-5" />
+              <span>ตัวกรอง</span>
+            </motion.button>
           </div>
+
+          {/* Advanced Filters */}
+          <AnimatePresence>
+            {showFilters && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="max-w-4xl w-full mx-auto mb-6 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Sort Options */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                      <SortAsc className="w-4 h-4 mr-2" />
+                      เรียงลำดับ
+                    </h3>
+                    <div className="space-y-2">
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name="sort"
+                          checked={filters.sortBy === 'newest'}
+                          onChange={() => handleSortChange('newest')}
+                          className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                        />
+                        <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">ใหม่สุด</span>
+                      </label>
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name="sort"
+                          checked={filters.sortBy === 'oldest'}
+                          onChange={() => handleSortChange('oldest')}
+                          className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                        />
+                        <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">เก่าสุด</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Time Period Filter */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                      <Clock className="w-4 h-4 mr-2" />
+                      ช่วงเวลา
+                    </h3>
+                    <div className="space-y-2">
+                      {timePeriods.map((period) => (
+                        <label key={period.value} className="flex items-center cursor-pointer">
+                          <input
+                            type="radio"
+                            name="timePeriod"
+                            checked={filters.timePeriod === period.value}
+                            onChange={() => handleTimePeriodChange(period.value)}
+                            className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                          />
+                          <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">{period.display}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Period Filter */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      คาบเรียน
+                    </h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {timeSlots.map((slot) => (
+                        <label key={slot.value} className="flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={filters.periods.includes(slot.value)}
+                            onChange={() => handlePeriodToggle(slot.value)}
+                            className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                          />
+                          <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">{slot.display}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Clear Filters Button */}
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={clearAllFilters}
+                    className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                  >
+                    ล้างตัวกรองทั้งหมด
+                  </motion.button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Results Count */}
+          <div className="max-w-4xl w-full mx-auto mb-4 px-2">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              พบ {filteredBookings.length} รายการ
+              {filters.periods.length > 0 && ` (กรองคาบ: ${filters.periods.join(', ')})`}
+              {filters.timePeriod !== 'all' && ` (${timePeriods.find(p => p.value === filters.timePeriod)?.display})`}
+            </p>
+          </div>
+
           {isLoading ? (
             <div className="flex justify-center items-center h-48">
               <svg className="animate-spin h-8 w-8 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24">
@@ -321,11 +507,11 @@ export default function BookingsClient() {
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
             </div>
-          ) : finalBookings.length === 0 ? (
+          ) : filteredBookings.length === 0 ? (
             <p className="text-center text-gray-600 dark:text-gray-400 px-2">ไม่พบประวัติการบันทึกข้อมูล</p>
           ) : (
-            <div className="max-w-4xl w-full mx-auto mt-6 grid gap-4 px-2">
-              {finalBookings.map((booking, index) => (
+            <div className="max-w-4xl w-full mx-auto grid gap-4 px-2">
+              {filteredBookings.map((booking, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, y: 10 }}
