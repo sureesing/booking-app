@@ -102,6 +102,20 @@ export default function DashboardPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
 
+  // Define timeSlots at component level
+  const timeSlots: TimeSlot[] = [
+    { display: 'คาบ 0', value: '07:30-08:30' },
+    { display: 'คาบ 1', value: '08:30-09:20' },
+    { display: 'คาบ 2', value: '09:20-10:10' },
+    { display: 'คาบ 3', value: '10:10-11:00' },
+    { display: 'คาบ 4', value: '11:00-11:50' },
+    { display: 'คาบ 5', value: '11:50-13:00' },
+    { display: 'คาบ 6', value: '13:00-13:50' },
+    { display: 'คาบ 7', value: '13:50-14:40' },
+    { display: 'คาบ 8', value: '14:40-15:30' },
+    { display: 'คาบ 9', value: '15:30-16:30' },
+  ];
+
   // Initialize dark mode on client-side only
   useEffect(() => {
     const savedMode = localStorage.getItem('darkMode') === 'true';
@@ -153,68 +167,78 @@ export default function DashboardPage() {
         console.log('API response:', JSON.stringify(data, null, 2));
 
         if (data.success && Array.isArray(data.bookings)) {
-          console.log('Raw bookings:', data.bookings);
-          const mappedBookings = data.bookings
-            .map((booking: Record<string, unknown>, index: number) => {
-              let formattedDate = '';
-              if (booking.date) {
-                try {
-                  let parsedDate: Date;
-                  // Handle YYYY-MM-DD format
-                  if (/^\d{4}-\d{2}-\d{2}$/.test(booking.date as string)) {
-                    const [year, month, day] = (booking.date as string).split('-').map(Number);
-                    parsedDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
-                  }
-                  // Handle DD/MM/YYYY format
-                  else if (/^\d{2}\/\d{2}\/\d{4}$/.test(booking.date as string)) {
-                    const [day, month, year] = (booking.date as string).split('/').map(Number);
-                    parsedDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
-                  }
-                  // Handle other date formats
-                  else {
-                    parsedDate = new Date(booking.date as string);
-                  }
-                  if (!isNaN(parsedDate.getTime())) {
-                    formattedDate = parsedDate.toLocaleDateString('th-TH', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric',
-                      timeZone: 'Asia/Bangkok',
-                    });
-                  } else {
-                    console.warn(`Invalid date format at index ${index}: ${booking.date}`);
-                    formattedDate = '';
-                  }
-                } catch (e) {
-                  console.warn(`Error parsing date at index ${index}: ${booking.date}`, e);
-                  formattedDate = '';
+          // Map bookings เฉพาะ field ที่ต้องใช้ใน dashboard
+          const mappedBookings = data.bookings.map((booking: any) => {
+            // Try to get timeSlot from multiple possible field names
+            // Check both the correct Thai field name and the one used in Google Apps Script
+            const rawTimeSlot = booking.timeSlot || 
+                               booking['คาบที่เรียน'] || 
+                               booking['คาบเรียนที่'] || 
+                               booking.period || 
+                               '';
+            const symptoms = booking.symptoms || booking['อาการ'] || '';
+            
+            // Try to get date from multiple possible field names and formats
+            let dateRaw = booking.date || booking['วันที่เลือก'] || '';
+            
+            // Debug logging
+            console.log('Processing booking:', {
+              original: booking,
+              rawTimeSlot,
+              symptoms,
+              dateRaw,
+              availableFields: Object.keys(booking)
+            });
+            
+            // If date is in ISO format, convert it to the expected format
+            if (dateRaw && dateRaw.includes('T')) {
+              try {
+                const date = new Date(dateRaw);
+                if (!isNaN(date.getTime())) {
+                  // Convert to DD/MM/YYYY format for consistency
+                  dateRaw = date.toLocaleDateString('th-TH', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric', 
+                    timeZone: 'Asia/Bangkok' 
+                  });
                 }
-              } else {
-                console.warn(`Missing date at index ${index}:`, booking);
-                formattedDate = '';
+              } catch (e) {
+                console.warn('Failed to parse date:', dateRaw, e);
               }
-              
-              // Map according to new Google Apps Script structure
-              const timeSlot = booking['คาบเรียนที่'] || booking.period || booking.timeSlot || '';
-              const symptoms = booking['อาการ'] || booking.symptoms || 'ไม่ระบุ';
-              
-              console.log(`Index ${index}: Raw date: ${booking.date}, Formatted date: ${formattedDate}, TimeSlot: ${timeSlot}, Symptoms: ${symptoms}`);
-              
-              return {
-                firstName: booking['ชื่อ'] || booking.firstName as string || '',
-                lastName: booking['นามสกุล'] || booking.lastName as string || '',
-                timeSlot: timeSlot,
-                date: formattedDate,
-                symptoms: symptoms,
-                treatment: booking['วิธีรักษา'] || booking.treatment as string || 'ไม่มี',
-              };
-            })
-            .filter((booking: Booking) => booking.date !== ''); // Only include bookings with valid dates
-          console.log('Mapped bookings:', mappedBookings);
-          if (isMounted) {
-            setBookings(mappedBookings);
-            setError(''); // Clear any previous errors
-          }
+            }
+            
+            let timeSlot = 'ไม่ระบุ';
+            if (rawTimeSlot && rawTimeSlot.trim() !== '') {
+              const found = timeSlots.find((slot: TimeSlot) => slot.value === rawTimeSlot);
+              timeSlot = found ? found.display : rawTimeSlot;
+            }
+            
+            let formattedDate = '';
+            if (dateRaw && dateRaw.trim() !== '') {
+              // If it's already in DD/MM/YYYY format, use it as is
+              if (dateRaw.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+                formattedDate = dateRaw;
+              } else {
+                // Try to parse and format
+                const d = new Date(dateRaw);
+                if (!isNaN(d.getTime())) {
+                  formattedDate = d.toLocaleDateString('th-TH', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric', 
+                    timeZone: 'Asia/Bangkok' 
+                  });
+                }
+              }
+            }
+            
+            const result = { timeSlot, symptoms, date: formattedDate };
+            console.log('Mapped booking result:', result);
+            return result;
+          });
+          setBookings(mappedBookings);
+          setError('');
         } else {
           throw new Error(data.message || 'ไม่สามารถดึงข้อมูลได้');
         }
@@ -269,21 +293,6 @@ export default function DashboardPage() {
     setIsDark((prev) => !prev);
   };
 
-  // Define time slots consistent with BookingClient
-   const timeSlots = [
-    { display: 'คาบ 0', value: '07:30-08:30' },
-    { display: 'คาบ 1', value: '08:30-09:20' },
-    { display: 'คาบ 2', value: '09:20-10:10' },
-    { display: 'คาบ 3', value: '10:10-11:00' },
-    { display: 'คาบ 4', value: '11:00-11:50' },
-    { display: 'คาบ 5', value: '11:50-13:00' },
-    { display: 'คาบ 6', value: '13:00-13:50' },
-    { display: 'คาบ 7', value: '13:50-14:40' },
-    { display: 'คาบ 8', value: '14:40-15:30' },
-    { display: 'คาบ 9', value: '15:30-16:30' },
-  ];
-
-
   // Calculate statistics
   const totalBookings = bookings.length;
   console.log('Total bookings:', totalBookings, 'Bookings:', bookings);
@@ -309,18 +318,6 @@ export default function DashboardPage() {
   const growthRate = previousWeekBookings > 0 
     ? ((currentWeekBookings - previousWeekBookings) / previousWeekBookings * 100).toFixed(1)
     : currentWeekBookings > 0 ? '100' : '0';
-
-  // Calculate peak hours
-  const hourlyData = bookings.reduce((acc: Record<string, number>, booking: Booking) => {
-    const timeSlot = booking.timeSlot;
-    if (timeSlot) {
-      const hour = timeSlot.split('-')[0].split(':')[0];
-      acc[hour] = (acc[hour] || 0) + 1;
-    }
-    return acc;
-  }, {});
-
-  const peakHour = Object.entries(hourlyData).reduce((a, b) => hourlyData[a[0]] > hourlyData[b[0]] ? a : b, ['', 0]);
 
   // Calculate most common symptoms
   const symptomCategories = [
@@ -369,11 +366,33 @@ export default function DashboardPage() {
 
   // Bookings by time slot
   const timeSlotCounts = bookings.reduce((acc: Record<string, number>, booking: Booking) => {
-    const display = timeSlots.find((slot) => slot.value === booking.timeSlot)?.display || booking.timeSlot || 'ไม่ระบุ';
+    let display = 'ไม่ระบุ';
+    
+    if (booking.timeSlot && booking.timeSlot !== 'ไม่ระบุ' && booking.timeSlot.trim() !== '') {
+      // Try to find matching time slot
+      const matchingSlot = timeSlots.find((slot: TimeSlot) => slot.value === booking.timeSlot);
+      if (matchingSlot) {
+        display = matchingSlot.display;
+      } else {
+        // If no exact match, use the time slot as is
+        display = booking.timeSlot;
+      }
+    }
+    
     acc[display] = (acc[display] || 0) + 1;
     return acc;
   }, {});
+  
+  // Filter out "ไม่ระบุ" from peak hours calculation if there are other time slots
+  const timeSlotCountsForPeak = { ...timeSlotCounts };
+  const hasValidTimeSlots = Object.keys(timeSlotCountsForPeak).some(key => key !== 'ไม่ระบุ' && timeSlotCountsForPeak[key] > 0);
+  
+  if (hasValidTimeSlots) {
+    delete timeSlotCountsForPeak['ไม่ระบุ'];
+  }
+  
   console.log('Time Slot Counts:', timeSlotCounts);
+  console.log('Time Slot Counts for Peak (filtered):', timeSlotCountsForPeak);
   const timeSlotData = {
     labels: Object.keys(timeSlotCounts),
     datasets: [
@@ -449,6 +468,14 @@ export default function DashboardPage() {
   // อาการที่พบบ่อยจริง
   const mostCommonSymptom = Object.entries(symptomCounts).sort(([,a],[,b])=>b-a)[0]?.[0] || 'ไม่มีข้อมูล';
   const mostCommonSymptomCount = symptomCounts[mostCommonSymptom] || 0;
+
+  // Calculate peak hours using time slot data
+  const peakHour = Object.keys(timeSlotCountsForPeak).length > 0 
+    ? Object.entries(timeSlotCountsForPeak).reduce((a, b) => timeSlotCountsForPeak[a[0]] > timeSlotCountsForPeak[b[0]] ? a : b, ['', 0])
+    : ['ไม่ระบุ', 0];
+
+  // Clean up peak hour display - remove ":00" suffix if present
+  const peakHourDisplay = typeof peakHour[0] === 'string' ? peakHour[0].replace(/:00$/, '') : peakHour[0];
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-100 via-indigo-100 to-red-100 dark:from-indigo-950 dark:via-gray-900 dark:to-red-950 transition-colors duration-700">
@@ -815,7 +842,9 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600 dark:text-white">ช่วงเวลาที่มีผู้ใช้บริการสูงสุด</p>
-                      <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{peakHour[0]}:00</p>
+                      <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                        {peakHourDisplay}
+                      </p>
                     </div>
                     <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/50">
                       <svg className="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -823,7 +852,9 @@ export default function DashboardPage() {
                       </svg>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-white mt-2">{peakHour[1]} ครั้ง</p>
+                  <p className="text-xs text-gray-500 dark:text-white mt-2">
+                    {peakHour[1]} ครั้ง
+                  </p>
                 </motion.div>
 
                 {/* Top Symptom */}

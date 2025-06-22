@@ -8,21 +8,104 @@ export async function GET(req: NextRequest) {
     const action = searchParams.get('action');
     
     if (action === 'getBookings') {
-      const scriptUrl = 'https://script.google.com/macros/s/AKfycbxjJUFf_n3YuxGaskactb_BUGmLCbnObIHH4T3KockGl1-Qr-y5200pvBdaPCxQUtru/exec';
+      const scriptUrl = process.env.NEXT_PUBLIC_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbxjJUFf_n3YuxGaskactb_BUGmLCbnObIHH4T3KockGl1-Qr-y5200pvBdaPCxQUtru/exec';
       
-      const response = await fetch(`${scriptUrl}?action=getBookings`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      console.log('getBookings: Using script URL:', scriptUrl);
+      console.log('getBookings: NEXT_PUBLIC_SCRIPT_URL env var:', process.env.NEXT_PUBLIC_SCRIPT_URL);
+      try {
+        const response = await fetch(`${scriptUrl}?action=getBookings`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        console.log('getBookings: Response status:', response.status);
+        console.log('getBookings: Response headers:', Object.fromEntries(response.headers.entries()));
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const responseText = await response.text();
+        console.log('getBookings: Raw response text (first 500 chars):', responseText.substring(0, 500));
+        
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('getBookings: Failed to parse JSON response:', parseError);
+          console.log('getBookings: Full response text:', responseText);
+          
+          // If it's HTML, it might be an error page
+          if (responseText.includes('<!DOCTYPE') || responseText.includes('<html')) {
+            return NextResponse.json(
+              { 
+                success: false, 
+                message: 'Google Apps Script returned HTML instead of JSON. Please check if the script is deployed correctly.',
+                details: 'The script URL might be incorrect or the script needs to be redeployed.'
+              },
+              { status: 500 }
+            );
+          }
+          
+          return NextResponse.json(
+            { 
+              success: false, 
+              message: 'Invalid response format from Google Apps Script',
+              details: 'Expected JSON but received: ' + responseText.substring(0, 100)
+            },
+            { status: 500 }
+          );
+        }
+        
+        console.log('getBookings response:', data);
+        
+        // Transform the data to match the expected Thai field structure
+        if (data.success && Array.isArray(data.bookings)) {
+          console.log('Starting data transformation...');
+          console.log('Original bookings count:', data.bookings.length);
+          
+          const transformedBookings = data.bookings.map((booking: any, index: number) => {
+            console.log(`Transforming booking ${index}:`, booking);
+            
+            // Convert English field names to Thai field names
+            const transformed = {
+              'วันที่เลือก': booking.date || '',
+              'คาบที่เรียน': booking.timeSlot || '',
+              'เลขประจำตัว': booking.studentId || '',
+              'ระดับชั้น': booking.grade || '',
+              'คำนำหน้า': booking.prefix || '',
+              'ชื่อ': booking.firstName || '',
+              'นามสกุล': booking.lastName || '',
+              'อาการ': booking.symptoms || '',
+              'วิธีรักษา': booking.treatment || '',
+              'imageLink': booking.imageLink || '',
+              'Timestamp': booking.timestamp || '',
+              // Keep English fields for backward compatibility
+              ...booking
+            };
+            
+            console.log(`Transformed booking ${index}:`, transformed);
+            return transformed;
+          });
+          
+          const transformedData = {
+            ...data,
+            bookings: transformedBookings
+          };
+          
+          console.log('Final transformed data:', transformedData);
+          return NextResponse.json(transformedData);
+        } else {
+          console.log('Data transformation skipped - data.success:', data.success, 'Array.isArray(data.bookings):', Array.isArray(data.bookings));
+        }
+        
+        return NextResponse.json(data);
+      } catch (fetchError) {
+        console.error('getBookings: Fetch error:', fetchError);
+        throw fetchError;
       }
-
-      const data = await response.json();
-      return NextResponse.json(data);
     }
 
     return NextResponse.json(

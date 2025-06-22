@@ -22,7 +22,7 @@ interface TimeSlot {
 
 interface FilterState {
   sortBy: 'newest' | 'oldest';
-  timePeriod: 'all' | '1day' | '3days' | '1week' | '1month' | '1year';
+  timePeriod: 'all' | 'today' | '1day' | '3days' | '1week' | '1month' | '1year';
   periods: string[];
 }
 
@@ -95,6 +95,39 @@ export default function BookingsClient() {
             timestamp: (booking.timestamp && booking.timestamp !== 'N/A') ? booking.timestamp as string : undefined,
             date: booking.date as string || '',
           })) : [];
+          
+          console.log('=== BOOKINGS DATA ===');
+          console.log('Raw API response:', data);
+          console.log('Mapped bookings:', mappedBookings);
+          console.log('Sample booking timeSlot:', mappedBookings[0]?.timeSlot);
+          console.log('Sample booking display:', mappedBookings[0] ? getTimeSlotDisplay(mappedBookings[0].timeSlot) : 'N/A');
+          console.log('Sample booking timestamp:', mappedBookings[0]?.timestamp);
+          console.log('Sample booking date:', mappedBookings[0]?.date);
+          
+          // Test date parsing for first booking
+          if (mappedBookings[0]) {
+            const testBooking = mappedBookings[0];
+            console.log('=== DATE PARSING TEST ===');
+            console.log('Original timestamp:', testBooking.timestamp);
+            console.log('Original date:', testBooking.date);
+            
+            if (testBooking.timestamp) {
+              const parsedTimestamp = new Date(testBooking.timestamp);
+              console.log('Parsed timestamp:', parsedTimestamp.toISOString(), 'Valid:', !isNaN(parsedTimestamp.getTime()));
+            }
+            
+            if (testBooking.date) {
+              let parsedDate: Date | null = null;
+              if (testBooking.date.includes('T')) {
+                parsedDate = new Date(testBooking.date);
+              } else if (testBooking.date.includes('/')) {
+                const [day, month, year] = testBooking.date.split('/');
+                parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+              }
+              console.log('Parsed date:', parsedDate?.toISOString(), 'Valid:', parsedDate ? !isNaN(parsedDate.getTime()) : false);
+            }
+          }
+          
           setBookings(mappedBookings);
         } else {
           setError(data.message || 'ไม่สามารถดึงข้อมูลได้');
@@ -110,25 +143,54 @@ export default function BookingsClient() {
     fetchBookings();
   }, []);
 
-  // Define time slots
+  // Define time slots with proper mapping
   const timeSlots: TimeSlot[] = [
-    { display: 'คาบ 0', value: 'คาบ 0' },
-    { display: 'คาบ 1', value: 'คาบ 1' },
-    { display: 'คาบ 2', value: 'คาบ 2' },
-    { display: 'คาบ 3', value: 'คาบ 3' },
-    { display: 'คาบ 4', value: 'คาบ 4' },
-    { display: 'คาบ 5', value: 'คาบ 5' },
-    { display: 'คาบ 6', value: 'คาบ 6' },
-    { display: 'คาบ 7', value: 'คาบ 7' },
-    { display: 'คาบ 8', value: 'คาบ 8' },
-    { display: 'คาบ 9', value: 'คาบ 9' },
+    { display: 'คาบ 0', value: '07:30-08:30' },
+    { display: 'คาบ 1', value: '08:30-09:20' },
+    { display: 'คาบ 2', value: '09:20-10:10' },
+    { display: 'คาบ 3', value: '10:10-11:00' },
+    { display: 'คาบ 4', value: '11:00-11:50' },
+    { display: 'คาบ 5', value: '11:50-13:00' },
+    { display: 'คาบ 6', value: '13:00-13:50' },
+    { display: 'คาบ 7', value: '13:50-14:40' },
+    { display: 'คาบ 8', value: '14:40-15:30' },
+    { display: 'คาบ 9', value: '15:30-16:30' },
   ];
+
+  // Helper function to get display name from time slot value
+  const getTimeSlotDisplay = (timeSlotValue: string): string => {
+    if (!timeSlotValue) return 'ไม่ระบุ';
+    
+    // First try to find exact match
+    const found = timeSlots.find(slot => slot.value === timeSlotValue);
+    if (found) return found.display;
+    
+    // If it's already a display name (like "คาบ 1"), return as is
+    if (timeSlotValue.startsWith('คาบ ')) return timeSlotValue;
+    
+    // Otherwise return the original value
+    return timeSlotValue;
+  };
+
+  // Helper function to check if a booking matches selected periods
+  const matchesSelectedPeriods = (bookingTimeSlot: string, selectedPeriods: string[]): boolean => {
+    if (selectedPeriods.length === 0) return true;
+    
+    const bookingDisplay = getTimeSlotDisplay(bookingTimeSlot);
+    
+    // Check if any selected period matches the booking's display name
+    return selectedPeriods.some(selectedPeriod => {
+      // selectedPeriod is like "คาบ 1", "คาบ 2", etc.
+      return bookingDisplay === selectedPeriod;
+    });
+  };
 
   // Define time periods
   const timePeriods = [
     { display: 'ทั้งหมด', value: 'all' },
-    { display: '1 วันที่แล้ว', value: '1day' },
-    { display: '3 วันที่แล้ว', value: '3days' },
+    { display: 'วันนี้', value: 'today' },
+    { display: 'เมื่อวาน', value: '1day' },
+    { display: '2-3 วันที่แล้ว', value: '3days' },
     { display: '1 อาทิตย์ที่แล้ว', value: '1week' },
     { display: '1 เดือนที่แล้ว', value: '1month' },
     { display: '1 ปีที่แล้ว', value: '1year' },
@@ -147,32 +209,85 @@ export default function BookingsClient() {
       );
 
       // Period filter
-      const matchesPeriod = filters.periods.length === 0 || filters.periods.includes(booking.timeSlot);
+      const matchesPeriod = matchesSelectedPeriods(booking.timeSlot, filters.periods);
+      
+      // Debug logging for period filtering
+      if (filters.periods.length > 0) {
+        console.log('Period filtering:', {
+          bookingTimeSlot: booking.timeSlot,
+          bookingDisplay: getTimeSlotDisplay(booking.timeSlot),
+          selectedPeriods: filters.periods,
+          matchesPeriod: matchesPeriod
+        });
+      }
 
       // Time period filter
       let matchesTimePeriod = true;
-      if (filters.timePeriod !== 'all' && booking.timestamp) {
-        const bookingDate = new Date(booking.timestamp);
-        const now = new Date();
-        const diffTime = Math.abs(now.getTime() - bookingDate.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (filters.timePeriod !== 'all') {
+        // Try to get date from timestamp or date field
+        let bookingDate: Date | null = null;
+        
+        if (booking.timestamp) {
+          bookingDate = new Date(booking.timestamp);
+        } else if (booking.date) {
+          // Handle different date formats
+          if (booking.date.includes('T')) {
+            // ISO format
+            bookingDate = new Date(booking.date);
+          } else if (booking.date.includes('/')) {
+            // DD/MM/YYYY format
+            const [day, month, year] = booking.date.split('/');
+            bookingDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+          }
+        }
+        
+        if (bookingDate && !isNaN(bookingDate.getTime())) {
+          const now = new Date();
+          const diffTime = now.getTime() - bookingDate.getTime();
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-        switch (filters.timePeriod) {
-          case '1day':
-            matchesTimePeriod = diffDays <= 1;
-            break;
-          case '3days':
-            matchesTimePeriod = diffDays <= 3;
-            break;
-          case '1week':
-            matchesTimePeriod = diffDays <= 7;
-            break;
-          case '1month':
-            matchesTimePeriod = diffDays <= 30;
-            break;
-          case '1year':
-            matchesTimePeriod = diffDays <= 365;
-            break;
+          // Debug logging for time period filtering
+          console.log('Time period filtering:', {
+            bookingDate: bookingDate.toISOString(),
+            now: now.toISOString(),
+            diffDays: diffDays,
+            timePeriod: filters.timePeriod,
+            bookingDateStr: bookingDate.toLocaleDateString('th-TH'),
+            nowStr: now.toLocaleDateString('th-TH')
+          });
+
+          switch (filters.timePeriod) {
+            case 'today':
+              // Show only bookings from today
+              matchesTimePeriod = diffDays === 0;
+              break;
+            case '1day':
+              // Show only bookings from yesterday (1 day ago)
+              matchesTimePeriod = diffDays === 1;
+              break;
+            case '3days':
+              // Show only bookings from 2-3 days ago
+              matchesTimePeriod = diffDays >= 2 && diffDays <= 3;
+              break;
+            case '1week':
+              // Show only bookings from 2-7 days ago
+              matchesTimePeriod = diffDays >= 2 && diffDays <= 7;
+              break;
+            case '1month':
+              // Show only bookings from 8-30 days ago
+              matchesTimePeriod = diffDays >= 8 && diffDays <= 30;
+              break;
+            case '1year':
+              // Show only bookings from 31-365 days ago
+              matchesTimePeriod = diffDays >= 31 && diffDays <= 365;
+              break;
+          }
+          
+          console.log('Final result:', { matchesTimePeriod, diffDays, timePeriod: filters.timePeriod });
+        } else {
+          // If we can't parse the date, don't show it for time-based filters
+          matchesTimePeriod = false;
+          console.log('Could not parse date:', { timestamp: booking.timestamp, date: booking.date });
         }
       }
 
@@ -462,11 +577,11 @@ export default function BookingsClient() {
                     </h3>
                     <div className="grid grid-cols-2 gap-2">
                       {timeSlots.map((slot) => (
-                        <label key={slot.value} className="flex items-center cursor-pointer">
+                        <label key={slot.display} className="flex items-center cursor-pointer">
                           <input
                             type="checkbox"
-                            checked={filters.periods.includes(slot.value)}
-                            onChange={() => handlePeriodToggle(slot.value)}
+                            checked={filters.periods.includes(slot.display)}
+                            onChange={() => handlePeriodToggle(slot.display)}
                             className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                           />
                           <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">{slot.display}</span>
@@ -525,7 +640,7 @@ export default function BookingsClient() {
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-gray-900 dark:text-gray-100 truncate">{booking.firstName} {booking.lastName}</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                      {booking.timeSlot} |
+                      {getTimeSlotDisplay(booking.timeSlot)} |
                       <span
                         className="inline-block px-2 py-1 ml-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-200"
                         title={booking.symptoms}
