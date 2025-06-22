@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { Calendar, Moon, Sun, LayoutDashboard, Search, User, Filter, Clock, SortAsc, SortDesc } from 'lucide-react';
+import { Calendar, Moon, Sun, LayoutDashboard, Search, User, Filter, Clock, SortAsc } from 'lucide-react';
 
 interface Booking {
   firstName: string;
@@ -308,7 +308,7 @@ export default function BookingsClient() {
   };
 
   const handleTimePeriodChange = (timePeriod: string) => {
-    setFilters(prev => ({ ...prev, timePeriod: timePeriod as any }));
+    setFilters(prev => ({ ...prev, timePeriod: timePeriod as 'all' | 'today' | '1day' | '3days' | '1week' | '1month' | '1year' }));
   };
 
   const handlePeriodToggle = (period: string) => {

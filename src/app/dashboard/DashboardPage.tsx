@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Moon, Sun } from 'lucide-react';
@@ -102,8 +102,8 @@ export default function DashboardPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
 
-  // Define timeSlots at component level
-  const timeSlots: TimeSlot[] = [
+  // Define timeSlots with useMemo to prevent recreation on every render
+  const timeSlots: TimeSlot[] = useMemo(() => [
     { display: 'คาบ 0', value: '07:30-08:30' },
     { display: 'คาบ 1', value: '08:30-09:20' },
     { display: 'คาบ 2', value: '09:20-10:10' },
@@ -114,7 +114,7 @@ export default function DashboardPage() {
     { display: 'คาบ 7', value: '13:50-14:40' },
     { display: 'คาบ 8', value: '14:40-15:30' },
     { display: 'คาบ 9', value: '15:30-16:30' },
-  ];
+  ], []);
 
   // Initialize dark mode on client-side only
   useEffect(() => {

@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
           console.log('Starting data transformation...');
           console.log('Original bookings count:', data.bookings.length);
           
-          const transformedBookings = data.bookings.map((booking: any, index: number) => {
+          const transformedBookings = data.bookings.map((booking: Record<string, unknown>, index: number) => {
             console.log(`Transforming booking ${index}:`, booking);
             
             // Convert English field names to Thai field names
