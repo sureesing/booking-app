@@ -514,7 +514,7 @@ export default function BookingsClient() {
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.3 }}
-                className="max-w-4xl w-full mx-auto mb-6 bg-gray-50 dark:bg-gray-950 rounded-xl p-4 border border-gray-200 dark:border-gray-600"
+                className="max-w-4xl w-full mx-auto mb-6 bg-white dark:bg-gray-950 rounded-xl p-4 border border-gray-200 dark:border-gray-600 shadow-sm"
               >
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Sort Options */}
