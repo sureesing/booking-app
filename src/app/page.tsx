@@ -12,7 +12,7 @@ export default function HomePage() {
     if (!token) {
       router.push('/booking')
     }
-  }, [])
+  }, [router])
 
   return (
     <main className="flex flex-col items-center justify-center h-screen">

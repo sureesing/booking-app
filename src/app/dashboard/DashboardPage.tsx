@@ -132,7 +132,6 @@ export default function DashboardPage() {
   // Fetch bookings with retry mechanism
   useEffect(() => {
     let isMounted = true;
-    let retryCount = 0;
     const maxRetries = 3;
     const retryDelay = 2000; // 2 seconds
 
@@ -168,18 +167,18 @@ export default function DashboardPage() {
 
         if (data.success && Array.isArray(data.bookings)) {
           // Map bookings เฉพาะ field ที่ต้องใช้ใน dashboard
-          const mappedBookings = data.bookings.map((booking: any) => {
+          const mappedBookings = data.bookings.map((booking: Record<string, unknown>) => {
             // Try to get timeSlot from multiple possible field names
             // Check both the correct Thai field name and the one used in Google Apps Script
-            const rawTimeSlot = booking.timeSlot || 
-                               booking['คาบที่เรียน'] || 
-                               booking['คาบเรียนที่'] || 
-                               booking.period || 
+            const rawTimeSlot = (booking.timeSlot as string) || 
+                               (booking['คาบที่เรียน'] as string) || 
+                               (booking['คาบเรียนที่'] as string) || 
+                               (booking.period as string) || 
                                '';
-            const symptoms = booking.symptoms || booking['อาการ'] || '';
+            const symptoms = (booking.symptoms as string) || (booking['อาการ'] as string) || '';
             
             // Try to get date from multiple possible field names and formats
-            let dateRaw = booking.date || booking['วันที่เลือก'] || '';
+            let dateRaw = (booking.date as string) || (booking['วันที่เลือก'] as string) || '';
             
             // Debug logging
             console.log('Processing booking:', {
@@ -287,7 +286,7 @@ export default function DashboardPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [timeSlots]);
 
   const handleToggle = () => {
     setIsDark((prev) => !prev);
@@ -296,28 +295,6 @@ export default function DashboardPage() {
   // Calculate statistics
   const totalBookings = bookings.length;
   console.log('Total bookings:', totalBookings, 'Bookings:', bookings);
-
-  // Calculate growth rate (comparing with previous week)
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const lastWeek = new Date(today);
-  lastWeek.setDate(today.getDate() - 7);
-  const twoWeeksAgo = new Date(today);
-  twoWeeksAgo.setDate(today.getDate() - 14);
-
-  const currentWeekBookings = bookings.filter(booking => {
-    const bookingDate = new Date(booking.date.split('/').reverse().join('-'));
-    return bookingDate >= lastWeek && bookingDate <= today;
-  }).length;
-
-  const previousWeekBookings = bookings.filter(booking => {
-    const bookingDate = new Date(booking.date.split('/').reverse().join('-'));
-    return bookingDate >= twoWeeksAgo && bookingDate < lastWeek;
-  }).length;
-
-  const growthRate = previousWeekBookings > 0 
-    ? ((currentWeekBookings - previousWeekBookings) / previousWeekBookings * 100).toFixed(1)
-    : currentWeekBookings > 0 ? '100' : '0';
 
   // Calculate most common symptoms
   const symptomCategories = [
