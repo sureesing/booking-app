@@ -383,7 +383,7 @@ export default function BookingsClient() {
               />
               <div className="w-20 h-10 bg-gray-200 peer-checked:bg-gradient-to-r peer-checked:from-indigo-700 peer-checked:to-red-700 rounded-full transition-all duration-500 shadow-[0_2px_8px_rgba(0,0,0,0.15)] dark:shadow-[0_2px_8px_rgba(99,102,241,0.3)] group-hover:shadow-[0_2px_12px_rgba(0,0,0,0.2)] dark:group-hover:shadow-[0_2px_12px_rgba(99,102,241,0.5)]">
                 <motion.div
-                  className="absolute left-1.5 top-1.5 w-7 h-7 bg-white dark:bg-gray-100 rounded-full shadow-lg flex items-center justify-center transform peer-checked:translate-x-10 transition-transform duration-500"
+                  className="absolute left-1.5 top-1.5 w-7 h-7 bg-white dark:bg-gray-300 rounded-full shadow-lg flex items-center justify-center transform peer-checked:translate-x-10 transition-transform duration-500"
                 >
                   {isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}
                 </motion.div>
@@ -442,7 +442,7 @@ export default function BookingsClient() {
                   />
                   <div className="w-20 h-10 bg-gray-200 peer-checked:bg-gradient-to-r peer-checked:from-indigo-700 peer-checked:to-red-700 rounded-full transition-all duration-500 shadow-[0_2px_8px_rgba(0,0,0,0.15)] dark:shadow-[0_2px_8px_rgba(99,102,241,0.3)] group-hover:shadow-[0_2px_12px_rgba(0,0,0,0.2)] dark:group-hover:shadow-[0_2px_12px_rgba(99,102,241,0.5)]">
                     <motion.div
-                      className="absolute left-1.5 top-1.5 w-7 h-7 bg-white dark:bg-gray-100 rounded-full shadow-lg flex items-center justify-center transform peer-checked:translate-x-10 transition-transform duration-500"
+                      className="absolute left-1.5 top-1.5 w-7 h-7 bg-white dark:bg-gray-300 rounded-full shadow-lg flex items-center justify-center transform peer-checked:translate-x-10 transition-transform duration-500"
                     >
                       {isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}
                     </motion.div>
@@ -463,7 +463,7 @@ export default function BookingsClient() {
           initial={{ opacity: 0, y: 50, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="w-full max-w-6xl p-3 sm:p-6 md:p-8 lg:p-10 rounded-2xl sm:rounded-3xl bg-white dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500"
+          className="w-full max-w-6xl p-3 sm:p-6 md:p-8 lg:p-10 rounded-2xl sm:rounded-3xl bg-white dark:bg-gray-900 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)] transform transition-all duration-500"
         >
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400 mb-4 sm:mb-6 md:mb-8 tracking-tight">
             ประวัติการบันทึก
@@ -514,7 +514,7 @@ export default function BookingsClient() {
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.3 }}
-                className="max-w-4xl w-full mx-auto mb-6 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700"
+                className="max-w-4xl w-full mx-auto mb-6 bg-gray-50 dark:bg-gray-950 rounded-xl p-4 border border-gray-200 dark:border-gray-600"
               >
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Sort Options */}
@@ -530,7 +530,7 @@ export default function BookingsClient() {
                           name="sort"
                           checked={filters.sortBy === 'newest'}
                           onChange={() => handleSortChange('newest')}
-                          className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                          className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 dark:checked:bg-indigo-600"
                         />
                         <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">ใหม่สุด</span>
                       </label>
@@ -540,7 +540,7 @@ export default function BookingsClient() {
                           name="sort"
                           checked={filters.sortBy === 'oldest'}
                           onChange={() => handleSortChange('oldest')}
-                          className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                          className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 dark:checked:bg-indigo-600"
                         />
                         <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">เก่าสุด</span>
                       </label>
@@ -561,7 +561,7 @@ export default function BookingsClient() {
                             name="timePeriod"
                             checked={filters.timePeriod === period.value}
                             onChange={() => handleTimePeriodChange(period.value)}
-                            className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                            className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 dark:checked:bg-indigo-600"
                           />
                           <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">{period.display}</span>
                         </label>
@@ -582,7 +582,7 @@ export default function BookingsClient() {
                             type="checkbox"
                             checked={filters.periods.includes(slot.display)}
                             onChange={() => handlePeriodToggle(slot.display)}
-                            className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                            className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 dark:checked:bg-indigo-600"
                           />
                           <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">{slot.display}</span>
                         </label>
@@ -592,7 +592,7 @@ export default function BookingsClient() {
                 </div>
 
                 {/* Clear Filters Button */}
-                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -632,7 +632,7 @@ export default function BookingsClient() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.04 }}
-                  className="flex items-center gap-4 bg-white dark:bg-gray-850 rounded-xl shadow-md hover:shadow-xl border border-gray-100 dark:border-gray-800 p-4 transition-all duration-200 group"
+                  className="flex items-center gap-4 bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl border border-gray-100 dark:border-gray-700 p-4 transition-all duration-200 group"
                 >
                   <div className="w-12 h-12 flex items-center justify-center rounded-full custom-user-avatar text-indigo-600 dark:text-indigo-300 text-xl font-bold">
                     <User className="w-7 h-7" />

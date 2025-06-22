@@ -167,7 +167,7 @@ html:not(.dark) [class*="bg-white"] {
 }
 
 html.dark [class*="bg-white"] {
-  background-color: var(--gray-850) !important;
+  background-color: #111827 !important; /* gray-900 */
 }
 
 /* Force footer colors */
@@ -295,7 +295,7 @@ html.dark [class*="bg-gradient-to-br"] {
 }
 
 html.dark [class*="bg-white"] {
-  background-color: var(--gray-850) !important;
+  background-color: #111827 !important; /* gray-900 */
 }
 
 html.dark [class*="text-gray-800"], html.dark [class*="text-gray-900"] {
@@ -532,8 +532,36 @@ footer * {
 .custom-user-avatar {
   background-color: #ede9fe !important; /* Tailwind purple-100 */
 }
+
 html.dark .custom-user-avatar {
   background-color: #312e81 !important; /* Tailwind indigo-900 */
+}
+
+/* Specific overrides for BookingsClient dark mode */
+html.dark [class*="bg-white"][class*="dark:bg-gray-900"] {
+  background-color: #111827 !important; /* gray-900 */
+}
+
+html.dark [class*="bg-white"][class*="dark:bg-gray-800"] {
+  background-color: #1f2937 !important; /* gray-800 */
+}
+
+html.dark [class*="bg-white"][class*="dark:bg-gray-700"] {
+  background-color: #374151 !important; /* gray-700 */
+}
+
+html.dark [class*="bg-white"][class*="dark:bg-gray-600"] {
+  background-color: #4b5563 !important; /* gray-600 */
+}
+
+/* Override for booking cards specifically */
+html.dark [class*="bg-white"][class*="rounded-xl"][class*="shadow-md"] {
+  background-color: #1f2937 !important; /* gray-800 for booking cards */
+}
+
+/* Override for filter section */
+html.dark [class*="bg-white"][class*="rounded-xl"][class*="p-4"][class*="border"] {
+  background-color: #111827 !important; /* gray-900 for filter section */
 }
 
 /* Force booking page specific colors */
@@ -616,7 +644,7 @@ html:not(.dark) [class*="bg-white"] {
 }
 
 html.dark [class*="bg-white"] {
-  background-color: var(--gray-850) !important;
+  background-color: #111827 !important; /* gray-900 */
 }
 
 /* Force text colors */
@@ -667,7 +695,7 @@ html:not(.dark) [class*="bg-white"] {
 }
 
 html.dark [class*="bg-white"] {
-  background-color: #1f2937 !important; /* gray-800 */
+  background-color: #111827 !important; /* gray-900 */
 }
 
 /* Force icon background colors */
@@ -891,4 +919,128 @@ html.dark [class*="text-sm"][class*="font-medium"][class*="text-white"] {
 
 html.dark [class*="text-xs"][class*="text-white"] {
   color: #ffffff !important;
+}
+
+/* Override for filter section */
+html.dark [class*="bg-white"][class*="rounded-xl"][class*="p-4"][class*="border"] {
+  background-color: #111827 !important; /* gray-900 for filter section */
+}
+
+/* Override for main content container */
+html.dark [class*="bg-white"][class*="max-w-6xl"][class*="rounded-2xl"] {
+  background-color: #111827 !important; /* gray-900 for main container */
+}
+
+/* Override for input fields */
+html.dark [class*="bg-white"][class*="rounded-lg"][class*="border"][class*="pl-10"] {
+  background-color: #1f2937 !important; /* gray-800 for search input */
+}
+
+/* Override for filter button */
+html.dark [class*="bg-white"][class*="rounded-lg"][class*="border"][class*="px-4"] {
+  background-color: #1f2937 !important; /* gray-800 for filter button */
+}
+
+/* Override for booking cards with specific structure */
+html.dark [class*="bg-white"][class*="flex"][class*="items-center"][class*="gap-4"] {
+  background-color: #1f2937 !important; /* gray-800 for booking cards */
+}
+
+/* Force override for BookingsClient specific elements */
+html.dark [class*="bg-white"][class*="dark:bg-gray-900"] {
+  background-color: #111827 !important; /* gray-900 */
+}
+
+html.dark [class*="bg-white"][class*="dark:bg-gray-800"] {
+  background-color: #1f2937 !important; /* gray-800 */
+}
+
+html.dark [class*="bg-white"][class*="dark:bg-gray-700"] {
+  background-color: #374151 !important; /* gray-700 */
+}
+
+/* Additional specific overrides for BookingsClient */
+html.dark [class*="bg-white"][class*="shadow-2xl"] {
+  background-color: #111827 !important; /* gray-900 for main container */
+}
+
+html.dark [class*="bg-white"][class*="shadow-md"] {
+  background-color: #1f2937 !important; /* gray-800 for cards */
+}
+
+html.dark [class*="bg-white"][class*="shadow-sm"] {
+  background-color: #1f2937 !important; /* gray-800 for inputs/buttons */
+}
+
+/* Specific override for filter section with gray-50 background */
+html.dark [class*="bg-gray-50"] {
+  background-color: #111827 !important; /* gray-900 */
+}
+
+/* Override for filter section specifically */
+html.dark [class*="bg-gray-50"][class*="dark:bg-gray-900"] {
+  background-color: #111827 !important; /* gray-900 */
+}
+
+/* Force override for any element with gray-50 in dark mode */
+html.dark [class*="bg-gray-50"] {
+  background-color: #111827 !important; /* gray-900 */
+}
+
+/* Additional specific overrides for filter elements */
+html.dark [class*="bg-gray-50"][class*="rounded-xl"] {
+  background-color: #111827 !important; /* gray-900 for filter container */
+}
+
+html.dark [class*="bg-gray-50"][class*="p-4"] {
+  background-color: #111827 !important; /* gray-900 for filter container */
+}
+
+html.dark [class*="bg-gray-50"][class*="border"] {
+  background-color: #111827 !important; /* gray-900 for filter container */
+}
+
+/* Override for any element that might have gray-50 background */
+html.dark [class*="bg-gray-50"][class*="max-w-4xl"] {
+  background-color: #111827 !important; /* gray-900 */
+}
+
+/* Force override for filter section with multiple classes */
+html.dark [class*="bg-gray-50"][class*="w-full"] {
+  background-color: #111827 !important; /* gray-900 */
+}
+
+/* Most specific override for filter section */
+html.dark [class*="max-w-4xl"][class*="w-full"][class*="mx-auto"][class*="mb-6"][class*="bg-gray-50"][class*="dark:bg-gray-900"][class*="rounded-xl"][class*="p-4"][class*="border"] {
+  background-color: #111827 !important; /* gray-900 */
+}
+
+/* Alternative specific override for filter section */
+html.dark [class*="bg-gray-50"][class*="dark:bg-gray-900"][class*="rounded-xl"] {
+  background-color: #111827 !important; /* gray-900 */
+}
+
+/* Force override for any element with both bg-gray-50 and dark:bg-gray-900 */
+html.dark [class*="bg-gray-50"][class*="dark:bg-gray-900"] {
+  background-color: #111827 !important; /* gray-900 */
+}
+
+/* Handle !important dark mode classes */
+html.dark [class*="dark:!bg-gray-900"] {
+  background-color: #111827 !important; /* gray-900 */
+}
+
+/* Specific override for filter section with !important */
+html.dark [class*="bg-gray-50"][class*="dark:!bg-gray-900"] {
+  background-color: #111827 !important; /* gray-900 */
+}
+
+/* Override for gray-950 background in dark mode */
+html.dark [class*="dark:bg-gray-950"] {
+  background-color: #030712 !important; /* gray-950 */
+}
+
+/* Specific override for filter section with gray-950 */
+html.dark [class*="bg-gray-50"][class*="dark:bg-gray-950"] {
+  background-color: #030712 !important; /* gray-950 */
 }
