@@ -489,7 +489,7 @@ export default function DashboardPage() {
               <Calendar className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
             </motion.div>
             <span className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400">
-              iMedReserve
+              Sureesing
             </span>
           </div>
           <div className="hidden md:flex items-center space-x-6">
@@ -594,7 +594,7 @@ export default function DashboardPage() {
           className="w-full max-w-5xl p-3 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl bg-white dark:bg-gray-850/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_0_25px_rgba(99,102,241,0.7)] border border-gray-200/50 dark:border-[rgba(99,102,241,0.5)]"
         >
           <h2 className="text-2xl sm:text-3xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-red-500 dark:from-indigo-400 dark:via-blue-400 dark:to-red-400 mb-4 sm:mb-6 tracking-tight">
-            แดชบอร์ด iMedReserve
+            แดชบอร์ด Sureesing
           </h2>
           <p className="text-center text-base sm:text-lg text-gray-950 dark:text-gray-100 mb-4 sm:mb-6 px-2">
             ข้อมูลการใช้ห้องพยาบาล วันที่ {todayDate.toLocaleDateString('th-TH', {

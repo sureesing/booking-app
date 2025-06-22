@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "iMedReserve",
+  title: "Sureesing",
   description: "A modern login page with dark mode",
   viewport: {
     width: 'device-width',
