@@ -296,6 +296,15 @@ export default function DashboardPage() {
   const totalBookings = bookings.length;
   console.log('Total bookings:', totalBookings, 'Bookings:', bookings);
 
+  // Calculate today's bookings
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayBookings = bookings.filter(booking => {
+    if (!booking.date) return false;
+    const bookingDate = new Date(booking.date.split('/').reverse().join('-'));
+    return bookingDate >= today;
+  }).length;
+
   // Calculate most common symptoms
   const symptomCategories = [
     'ปวด/เวียนศีรษะ',
@@ -759,6 +768,30 @@ export default function DashboardPage() {
                   </div>
                 </motion.div>
               </div>
+
+              {/* Today's Statistics - ด้านล่างกราฟแท่ง */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.7 }}
+                className="p-4 sm:p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-200/70 dark:border-gray-700/70 shadow-lg hover:shadow-xl transition-all duration-300"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-white">ผู้ใช้งานวันนี้</p>
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {todayBookings}
+                    </p>
+                  </div>
+                  <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/50">
+                    <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-white mt-2">จำนวนผู้ใช้งานในวันปัจจุบัน</p>
+              </motion.div>
 
               {/* Statistics Cards - ย้ายมาด้านล่าง */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
