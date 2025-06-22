@@ -785,7 +785,7 @@ export default function DashboardPage() {
 
               {/* Statistics Cards - ย้ายมาด้านล่าง */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                {/* Growth Rate */}
+                {/* Total Users */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -795,18 +795,18 @@ export default function DashboardPage() {
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-white">อัตราการเติบโต</p>
+                      <p className="text-sm font-medium text-gray-600 dark:text-white">จำนวนผู้ใช้งานทั้งหมด</p>
                       <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                        {parseFloat(growthRate) >= 0 ? '+' : ''}{growthRate}%
+                        {totalBookings}
                       </p>
                     </div>
-                    <div className={`p-2 rounded-full ${parseFloat(growthRate) >= 0 ? 'bg-green-100 dark:bg-green-900/50' : 'bg-red-100 dark:bg-red-900/50'}`}>
-                      <svg className={`w-6 h-6 ${parseFloat(growthRate) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={parseFloat(growthRate) >= 0 ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" : "M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"} />
+                    <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/50">
+                      <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-white mt-2">เทียบกับสัปดาห์ก่อนหน้า</p>
+                  <p className="text-xs text-gray-500 dark:text-white mt-2">จำนวนการเข้ารับบริการทั้งหมด</p>
                 </motion.div>
 
                 {/* Average Daily */}
