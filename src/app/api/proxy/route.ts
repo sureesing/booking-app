@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
     const action = searchParams.get('action');
     
     if (action === 'getBookings') {
-      const scriptUrl = 'https://script.google.com/macros/s/AKfycbzMXNmYPdtIC_X_3Sl2V7P5b5tR21QNTp9oBmPl9H43qWOBudoQ47ruZxf1wT9pdv9k/exec';
+      const scriptUrl = 'https://script.google.com/macros/s/AKfycbxjJUFf_n3YuxGaskactb_BUGmLCbnObIHH4T3KockGl1-Qr-y5200pvBdaPCxQUtru/exec';
       
       const response = await fetch(`${scriptUrl}?action=getBookings`, {
         method: 'GET',

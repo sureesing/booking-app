@@ -270,18 +270,19 @@ export default function DashboardPage() {
   };
 
   // Define time slots consistent with BookingClient
-  const timeSlots: TimeSlot[] = [
-    { display: 'คาบ 0', value: '07:30-08:00' },
-    { display: 'คาบ 1', value: '08:30-09:30' },
-    { display: 'คาบ 2', value: '09:30-10:30' },
-    { display: 'คาบ 3', value: '10:30-11:30' },
-    { display: 'คาบ 4', value: '11:30-12:30' },
-    { display: 'คาบ 5', value: '12:30-13:30' },
-    { display: 'คาบ 6', value: '13:30-14:30' },
-    { display: 'คาบ 7', value: '14:30-15:30' },
-    { display: 'คาบ 8', value: '15:30-16:30' },
-    { display: 'ไม่ระบุ', value: 'ไม่ระบุ' },
+   const timeSlots = [
+    { display: 'คาบ 0', value: '07:30-08:30' },
+    { display: 'คาบ 1', value: '08:30-09:20' },
+    { display: 'คาบ 2', value: '09:20-10:10' },
+    { display: 'คาบ 3', value: '10:10-11:00' },
+    { display: 'คาบ 4', value: '11:00-11:50' },
+    { display: 'คาบ 5', value: '11:50-13:00' },
+    { display: 'คาบ 6', value: '13:00-13:50' },
+    { display: 'คาบ 7', value: '13:50-14:40' },
+    { display: 'คาบ 8', value: '14:40-15:30' },
+    { display: 'คาบ 9', value: '15:30-16:30' },
   ];
+
 
   // Calculate statistics
   const totalBookings = bookings.length;
