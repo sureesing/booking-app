@@ -103,56 +103,12 @@ function groupSymptom(symptom: string) {
   return s;
 }
 
-// ฟังก์ชันสร้างข้อมูลทดสอบ
-function generateTestData() {
-  const testBookings: Booking[] = [];
-  const today = new Date();
-  
-  // สร้างข้อมูลสำหรับ 7 วันย้อนหลัง
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(today);
-    date.setDate(today.getDate() - i);
-    const dateStr = date.toLocaleDateString('th-TH', { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric', 
-      timeZone: 'Asia/Bangkok' 
-    });
-    
-    // สร้างจำนวนการจองแบบสุ่ม (0-5 คนต่อวัน)
-    const numBookings = Math.floor(Math.random() * 6);
-    
-    for (let j = 0; j < numBookings; j++) {
-      const timeSlots = [
-        'คาบ 0', 'คาบ 1', 'คาบ 2', 'คาบ 3', 'คาบ 4', 
-        'คาบ 5', 'คาบ 6', 'คาบ 7', 'คาบ 8', 'คาบ 9'
-      ];
-      const symptoms = [
-        'ปวดศีรษะ', 'ไข้หวัด', 'ปวดท้องกระเพาะ', 'ปวดท้องท้องเสีย', 'ปวดท้องอื่นๆ',
-        'ลมพิษ/แก้แพ้', 'เป็นลม', 'ตา', 'ทำแผล', 'ปวดฟัน', 'ปวดประจำเดือน', 'อุบัติเหตุ', 'อื่นๆ'
-      ];
-      
-      testBookings.push({
-        firstName: `ทดสอบ${i}${j}`,
-        lastName: `ผู้ใช้${i}${j}`,
-        timeSlot: timeSlots[Math.floor(Math.random() * timeSlots.length)],
-        date: dateStr,
-        symptoms: symptoms[Math.floor(Math.random() * symptoms.length)],
-        treatment: 'ให้ยาแก้ปวด'
-      });
-    }
-  }
-  
-  return testBookings;
-}
-
 export default function DashboardPage() {
   const [isDark, setIsDark] = useState<boolean>(false);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isTestMode, setIsTestMode] = useState(false);
   const router = useRouter();
 
   // Define timeSlots with useMemo to prevent recreation on every render

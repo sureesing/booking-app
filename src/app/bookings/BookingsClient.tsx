@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { Calendar, Moon, Sun, LayoutDashboard, Search, User, Filter, Clock, SortAsc } from 'lucide-react';
@@ -172,7 +172,7 @@ export default function BookingsClient() {
   ];
 
   // Helper function to get display name from time slot value
-  const getTimeSlotDisplay = (timeSlotValue: string): string => {
+  const getTimeSlotDisplay = useCallback((timeSlotValue: string): string => {
     if (!timeSlotValue) return 'ไม่ระบุ';
     
     // First try to find exact match
@@ -184,7 +184,7 @@ export default function BookingsClient() {
     
     // Otherwise return the original value
     return timeSlotValue;
-  };
+  }, [timeSlots]);
 
   // Helper function to check if a booking matches selected periods
   const matchesSelectedPeriods = (bookingTimeSlot: string, selectedPeriods: string[]): boolean => {
