@@ -72,26 +72,78 @@ const pieBorderDark = pieColorsDark.map(c => c.replace('0.7', '1'));
 function groupSymptom(symptom: string) {
   if (!symptom || symptom === 'N/A') return 'ไม่ระบุ';
   const s = symptom.trim();
-  if (s.includes('เวียนหัว') || s.includes('ปวดหัว')) return 'ปวด/เวียนศีรษะ';
-  if (s.includes('บาดเจ็บ') || s.includes('กีฬา')) return 'บาดเจ็บ/อุบัติเหตุ';
-  if (s.includes('ไข้')) return 'ไข้/ไม่สบาย';
-  if (s.includes('ไอ') || s.includes('เจ็บคอ')) return 'ไอ/เจ็บคอ';
-  if (s.includes('ท้องเสีย') || s.includes('ปวดท้อง')) return 'ปวดท้อง/ท้องเสีย';
-  if (s.includes('คลื่นไส้') || s.includes('อาเจียน')) return 'คลื่นไส้/อาเจียน';
-  if (s.includes('ปวดท้องประจำเดือน')) return 'ปวดท้องประจำเดือน';
+  
+  // จัดกลุ่มตามรายการอาการใหม่
+  if (s.includes('ปวดศีรษะ') || s.includes('ปวดหัว')) return 'ปวดศีรษะ';
+  if (s.includes('ปวดท้องกระเพาะ')) return 'ปวดท้องกระเพาะ';
+  if (s.includes('ปวดท้องท้องเสีย') || s.includes('ท้องเสีย')) return 'ปวดท้องท้องเสีย';
+  if (s.includes('ปวดท้องอื่นๆ') || s.includes('ปวดท้อง')) return 'ปวดท้องอื่นๆ';
+  if (s.includes('ไข้หวัด') || s.includes('ไข้')) return 'ไข้หวัด';
+  if (s.includes('ลมพิษ') || s.includes('แก้แพ้') || s.includes('แพ้')) return 'ลมพิษ/แก้แพ้';
   if (s.includes('เป็นลม')) return 'เป็นลม';
-  if (s.includes('ท้องผูก')) return 'ท้องผูก';
+  if (s.includes('ตา') || s.includes('ปวดตา')) return 'ตา';
+  if (s.includes('ทำแผล') || s.includes('แผล')) return 'ทำแผล';
   if (s.includes('ปวดฟัน')) return 'ปวดฟัน';
-  if (s.includes('ปวดหู')) return 'ปวดหู';
-  if (s.includes('ปวดหลัง')) return 'ปวดหลัง';
-  if (s.includes('ปวดข้อ')) return 'ปวดข้อ';
-  if (s.includes('แผล') || s.includes('เลือดออก')) return 'แผล/เลือดออก';
-  if (s.includes('หายใจลำบาก')) return 'หายใจลำบาก';
-  if (s.includes('แพ้') || s.includes('ผื่นคัน')) return 'แพ้/ผื่นคัน';
-  if (s.includes('ปวดตา') || s.includes('สายตา')) return 'ปวดตา/สายตา';
-  if (s.includes('เครียด') || s.includes('วิตกกังวล')) return 'เครียด/วิตกกังวล';
-  // เพิ่มเติมได้ตามต้องการ
+  if (s.includes('ปวดประจำเดือน')) return 'ปวดประจำเดือน';
+  if (s.includes('อุบัติเหตุ') || s.includes('บาดเจ็บ')) return 'อุบัติเหตุ';
+  
+  // สำหรับข้อมูลเก่าที่อาจมีอยู่ในระบบ
+  if (s.includes('เวียนหัว')) return 'ปวดศีรษะ';
+  if (s.includes('เจ็บคอ') || s.includes('ไอ')) return 'ไข้หวัด';
+  if (s.includes('คลื่นไส้') || s.includes('อาเจียน')) return 'ปวดท้องอื่นๆ';
+  if (s.includes('ท้องผูก')) return 'ปวดท้องอื่นๆ';
+  if (s.includes('ปวดหู')) return 'อื่นๆ';
+  if (s.includes('ปวดหลัง')) return 'อื่นๆ';
+  if (s.includes('ปวดข้อ')) return 'อื่นๆ';
+  if (s.includes('หายใจลำบาก')) return 'อื่นๆ';
+  if (s.includes('ผื่นคัน')) return 'ลมพิษ/แก้แพ้';
+  if (s.includes('สายตา')) return 'ตา';
+  if (s.includes('เครียด') || s.includes('วิตกกังวล')) return 'อื่นๆ';
+  
   return s;
+}
+
+// ฟังก์ชันสร้างข้อมูลทดสอบ
+function generateTestData() {
+  const testBookings: Booking[] = [];
+  const today = new Date();
+  
+  // สร้างข้อมูลสำหรับ 7 วันย้อนหลัง
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+    const dateStr = date.toLocaleDateString('th-TH', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric', 
+      timeZone: 'Asia/Bangkok' 
+    });
+    
+    // สร้างจำนวนการจองแบบสุ่ม (0-5 คนต่อวัน)
+    const numBookings = Math.floor(Math.random() * 6);
+    
+    for (let j = 0; j < numBookings; j++) {
+      const timeSlots = [
+        'คาบ 0', 'คาบ 1', 'คาบ 2', 'คาบ 3', 'คาบ 4', 
+        'คาบ 5', 'คาบ 6', 'คาบ 7', 'คาบ 8', 'คาบ 9'
+      ];
+      const symptoms = [
+        'ปวดศีรษะ', 'ไข้หวัด', 'ปวดท้องกระเพาะ', 'ปวดท้องท้องเสีย', 'ปวดท้องอื่นๆ',
+        'ลมพิษ/แก้แพ้', 'เป็นลม', 'ตา', 'ทำแผล', 'ปวดฟัน', 'ปวดประจำเดือน', 'อุบัติเหตุ', 'อื่นๆ'
+      ];
+      
+      testBookings.push({
+        firstName: `ทดสอบ${i}${j}`,
+        lastName: `ผู้ใช้${i}${j}`,
+        timeSlot: timeSlots[Math.floor(Math.random() * timeSlots.length)],
+        date: dateStr,
+        symptoms: symptoms[Math.floor(Math.random() * symptoms.length)],
+        treatment: 'ให้ยาแก้ปวด'
+      });
+    }
+  }
+  
+  return testBookings;
 }
 
 export default function DashboardPage() {
@@ -100,6 +152,7 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isTestMode, setIsTestMode] = useState(false);
   const router = useRouter();
 
   // Define timeSlots with useMemo to prevent recreation on every render
@@ -379,25 +432,19 @@ export default function DashboardPage() {
 
   // Calculate most common symptoms
   const symptomCategories = [
-    'ปวด/เวียนศีรษะ',
-    'ไข้/ไม่สบาย',
-    'ปวดท้อง/ท้องเสีย',
-    'ปวดท้องประจำเดือน',
-    'ไอ/เจ็บคอ',
-    'บาดเจ็บ/อุบัติเหตุ',
+    'ปวดศีรษะ',
+    'ปวดท้องกระเพาะ',
+    'ปวดท้องท้องเสีย',
+    'ปวดท้องอื่นๆ',
+    'ไข้หวัด',
+    'ลมพิษ/แก้แพ้',
     'เป็นลม',
-    'คลื่นไส้/อาเจียน',
-    'ท้องผูก',
+    'ตา',
+    'ทำแผล',
     'ปวดฟัน',
-    'ปวดหู',
-    'ปวดหลัง',
-    'ปวดข้อ',
-    'แผล/เลือดออก',
-    'หายใจลำบาก',
-    'แพ้/ผื่นคัน',
-    'ปวดตา/สายตา',
-    'เครียด/วิตกกังวล',
-    'อื่นๆ',
+    'ปวดประจำเดือน',
+    'อุบัติเหตุ',
+    'อื่นๆ'
   ];
   const symptomCounts = bookings.reduce((acc: Record<string, number>, booking: Booking) => {
     const category = groupSymptom(booking.symptoms || '');
