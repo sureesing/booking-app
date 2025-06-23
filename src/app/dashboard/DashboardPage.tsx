@@ -282,9 +282,18 @@ export default function DashboardPage() {
 
     fetchBookings();
 
+    // Set up automatic refresh every hour to ensure data stays current
+    const refreshInterval = setInterval(() => {
+      if (isMounted) {
+        console.log('Auto-refreshing dashboard data...');
+        fetchBookings();
+      }
+    }, 60 * 60 * 1000); // Refresh every hour
+
     // Cleanup function
     return () => {
       isMounted = false;
+      clearInterval(refreshInterval);
     };
   }, [timeSlots]);
 
@@ -296,14 +305,77 @@ export default function DashboardPage() {
   const totalBookings = bookings.length;
   console.log('Total bookings:', totalBookings, 'Bookings:', bookings);
 
-  // Calculate today's bookings
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayBookings = bookings.filter(booking => {
+  // Bookings by date
+  const todayDate = new Date();
+  todayDate.setHours(0, 0, 0, 0); // Set to start of day
+  const sevenDaysAgo = new Date(todayDate);
+  sevenDaysAgo.setDate(todayDate.getDate() - 6); // 7 days total (today + 6 days back)
+
+  // Generate all dates in the last 7 days for labels
+  const dateRange: string[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(todayDate);
+    date.setDate(todayDate.getDate() - i);
+    dateRange.push(date.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Bangkok' }));
+  }
+
+  // Collect unique dates from bookings within the last 7 days
+  const dailyCounts = bookings.reduce((acc: Record<string, number>, booking: Booking) => {
+    if (booking.date && dateRange.includes(booking.date)) {
+      acc[booking.date] = (acc[booking.date] || 0) + 1;
+    }
+    return acc;
+  }, {});
+
+  // Find the latest date with data in the last 7 days
+  const lastDateWithData = [...dateRange].reverse().find(date => dailyCounts[date] > 0) || dateRange[dateRange.length - 1];
+  const lastDateBookings = dailyCounts[lastDateWithData] || 0;
+
+  // Calculate today's bookings using the dailyCounts data
+  const todayFormatted = todayDate.toLocaleDateString('th-TH', { 
+    day: '2-digit', 
+    month: '2-digit', 
+    year: 'numeric', 
+    timeZone: 'Asia/Bangkok' 
+  });
+  const todayBookings = dailyCounts[todayFormatted] || 0;
+  console.log('=== TODAY BOOKINGS DEBUG ===');
+  console.log('Today formatted:', todayFormatted);
+  console.log('Daily counts:', dailyCounts);
+  console.log('Today bookings from dailyCounts:', todayBookings);
+  console.log('All bookings with dates:', bookings.map(b => ({ date: b.date, timeSlot: b.timeSlot })));
+  
+  // Additional check: filter bookings for today manually
+  const manualTodayBookings = bookings.filter(booking => {
     if (!booking.date) return false;
-    const bookingDate = new Date(booking.date.split('/').reverse().join('-'));
-    return bookingDate >= today;
-  }).length;
+    console.log('Checking booking date:', booking.date, 'against today:', todayFormatted);
+    return booking.date === todayFormatted;
+  });
+  console.log('Manual today bookings count:', manualTodayBookings.length);
+  console.log('Manual today bookings:', manualTodayBookings);
+
+  // Calculate max value for y-axis
+  const maxBookingCount = Math.max(...Object.values(dailyCounts), 0);
+  const yAxisMax = Math.ceil(maxBookingCount * 1.1); // Add 10% buffer
+  let barStepSize = 10;
+  if (yAxisMax <= 10) barStepSize = 1;
+  else if (yAxisMax <= 50) barStepSize = 5;
+  else if (yAxisMax <= 100) barStepSize = 10;
+  else barStepSize = 20;
+  console.log('Max Booking Count:', maxBookingCount, 'Y-Axis Max:', yAxisMax, 'Step Size:', barStepSize);
+
+  const dailyData = {
+    labels: dateRange,
+    datasets: [
+      {
+        label: 'ข้อมูลการใช้งานตามวัน',
+        data: dateRange.map((date) => dailyCounts[date] || 0),
+        backgroundColor: isDark ? 'rgba(165,180,252,0.7)' : 'rgba(99, 102, 241, 0.8)',
+        borderColor: isDark ? 'rgba(165,180,252,1)' : 'rgba(99, 102, 241, 1)',
+        borderWidth: 2,
+      },
+    ],
+  };
 
   // Calculate most common symptoms
   const symptomCategories = [
@@ -387,65 +459,6 @@ export default function DashboardPage() {
         data: Object.values(timeSlotCounts),
         backgroundColor: isDark ? pieColorsDark : pieColorsLight,
         borderColor: isDark ? pieBorderDark : pieBorderLight,
-        borderWidth: 2,
-      },
-    ],
-  };
-
-  // Bookings by date
-  const todayDate = new Date();
-  todayDate.setHours(0, 0, 0, 0); // Set to start of day
-  const sevenDaysAgo = new Date(todayDate);
-  sevenDaysAgo.setDate(todayDate.getDate() - 6); // 7 days total (today + 6 days back)
-  console.log('Today:', todayDate.toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok' }));
-  console.log('Seven days ago:', sevenDaysAgo.toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok' }));
-
-  // Generate all dates in the last 7 days for labels
-  const dateRange: string[] = [];
-  for (let i = 6; i >= 0; i--) { // Start from 6 days ago, go to today
-    const date = new Date(todayDate);
-    date.setDate(todayDate.getDate() - i);
-    dateRange.push(date.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Bangkok' }));
-  }
-  console.log('Date Range (last 7 days):', dateRange);
-
-  // Collect unique dates from bookings within the last 7 days
-  console.log('Processing daily counts for bookings:', bookings);
-  const dailyCounts = bookings.reduce((acc: Record<string, number>, booking: Booking) => {
-    if (booking.date) {
-      console.log(`Processing booking date: ${booking.date}`);
-      // booking.date is in DD/MM/YYYY format
-      if (dateRange.includes(booking.date)) {
-        console.log(`Match found: ${booking.date} is in dateRange`);
-        acc[booking.date] = (acc[booking.date] || 0) + 1;
-      } else {
-        console.log(`No match: ${booking.date} not in dateRange`);
-      }
-    } else {
-      console.warn('Missing or invalid date:', booking);
-    }
-    return acc;
-  }, {});
-  console.log('Daily Counts:', dailyCounts);
-
-  // Calculate max value for y-axis
-  const maxBookingCount = Math.max(...Object.values(dailyCounts), 0);
-  const yAxisMax = Math.ceil(maxBookingCount * 1.1); // Add 10% buffer
-  let barStepSize = 10;
-  if (yAxisMax <= 10) barStepSize = 1;
-  else if (yAxisMax <= 50) barStepSize = 5;
-  else if (yAxisMax <= 100) barStepSize = 10;
-  else barStepSize = 20;
-  console.log('Max Booking Count:', maxBookingCount, 'Y-Axis Max:', yAxisMax, 'Step Size:', barStepSize);
-
-  const dailyData = {
-    labels: dateRange,
-    datasets: [
-      {
-        label: 'ข้อมูลการใช้งานตามวัน',
-        data: dateRange.map((date) => dailyCounts[date] || 0),
-        backgroundColor: isDark ? 'rgba(165,180,252,0.7)' : 'rgba(99, 102, 241, 0.8)',
-        borderColor: isDark ? 'rgba(165,180,252,1)' : 'rgba(99, 102, 241, 1)',
         borderWidth: 2,
       },
     ],
@@ -779,9 +792,11 @@ export default function DashboardPage() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-white">ผู้ใช้งานวันนี้</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-white">
+                      ผู้ใช้งาน{lastDateWithData === dateRange[dateRange.length - 1] ? 'วันนี้' : `ล่าสุด (${lastDateWithData})`}
+                    </p>
                     <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                      {todayBookings}
+                      {lastDateBookings}
                     </p>
                   </div>
                   <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/50">
@@ -790,7 +805,7 @@ export default function DashboardPage() {
                     </svg>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-white mt-2">จำนวนผู้ใช้งานในวันปัจจุบัน</p>
+                <p className="text-xs text-gray-500 dark:text-white mt-2">จำนวนผู้ใช้งานใน{lastDateWithData === dateRange[dateRange.length - 1] ? 'วันปัจจุบัน' : `วันล่าสุด (${lastDateWithData})`}</p>
               </motion.div>
 
               {/* Statistics Cards - ย้ายมาด้านล่าง */}

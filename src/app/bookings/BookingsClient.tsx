@@ -34,6 +34,8 @@ export default function BookingsClient() {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage] = useState<number>(10);
   const [filters, setFilters] = useState<FilterState>({
     sortBy: 'newest',
     timePeriod: 'all',
@@ -140,7 +142,19 @@ export default function BookingsClient() {
         setIsLoading(false);
       }
     };
+    
     fetchBookings();
+
+    // Set up automatic refresh every 30 minutes to ensure data stays current
+    const refreshInterval = setInterval(() => {
+      console.log('Auto-refreshing bookings data...');
+      fetchBookings();
+    }, 30 * 60 * 1000); // Refresh every 30 minutes
+
+    // Cleanup function
+    return () => {
+      clearInterval(refreshInterval);
+    };
   }, []);
 
   // Define time slots with proper mapping
@@ -243,26 +257,30 @@ export default function BookingsClient() {
         
         if (bookingDate && !isNaN(bookingDate.getTime())) {
           const now = new Date();
-          const diffTime = now.getTime() - bookingDate.getTime();
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Start of today
+          const bookingDateOnly = new Date(bookingDate.getFullYear(), bookingDate.getMonth(), bookingDate.getDate()); // Start of booking date
+          
+          const diffTime = today.getTime() - bookingDateOnly.getTime();
           const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
           // Debug logging for time period filtering
           console.log('Time period filtering:', {
             bookingDate: bookingDate.toISOString(),
-            now: now.toISOString(),
+            bookingDateOnly: bookingDateOnly.toISOString(),
+            today: today.toISOString(),
             diffDays: diffDays,
             timePeriod: filters.timePeriod,
-            bookingDateStr: bookingDate.toLocaleDateString('th-TH'),
-            nowStr: now.toLocaleDateString('th-TH')
+            bookingDateStr: bookingDateOnly.toLocaleDateString('th-TH'),
+            todayStr: today.toLocaleDateString('th-TH')
           });
 
           switch (filters.timePeriod) {
             case 'today':
-              // Show only bookings from today
+              // Show only bookings from today (diffDays = 0)
               matchesTimePeriod = diffDays === 0;
               break;
             case '1day':
-              // Show only bookings from yesterday (1 day ago)
+              // Show only bookings from yesterday (diffDays = 1)
               matchesTimePeriod = diffDays === 1;
               break;
             case '3days':
@@ -301,6 +319,58 @@ export default function BookingsClient() {
         ? dateB.getTime() - dateA.getTime()
         : dateA.getTime() - dateB.getTime();
     });
+
+  // Pagination calculations
+  const totalItems = filteredBookings.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentBookings = filteredBookings.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filters]);
+
+  // Pagination navigation functions
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      // Show all pages if total is small
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Show pages around current page
+      const start = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+      const end = Math.min(totalPages, start + maxVisiblePages - 1);
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
+  };
 
   // Handle filter changes
   const handleSortChange = (sortBy: 'newest' | 'oldest') => {
@@ -609,7 +679,8 @@ export default function BookingsClient() {
           {/* Results Count */}
           <div className="max-w-4xl w-full mx-auto mb-4 px-2">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              พบ {filteredBookings.length} รายการ
+              พบ {totalItems} รายการ
+              {totalPages > 1 && ` (หน้า ${currentPage} จาก ${totalPages})`}
               {filters.periods.length > 0 && ` (กรองคาบ: ${filters.periods.join(', ')})`}
               {filters.timePeriod !== 'all' && ` (${timePeriods.find(p => p.value === filters.timePeriod)?.display})`}
             </p>
@@ -626,7 +697,7 @@ export default function BookingsClient() {
             <p className="text-center text-gray-600 dark:text-gray-400 px-2">ไม่พบประวัติการบันทึกข้อมูล</p>
           ) : (
             <div className="max-w-4xl w-full mx-auto grid gap-4 px-2">
-              {filteredBookings.map((booking, index) => (
+              {currentBookings.map((booking, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, y: 10 }}
@@ -651,6 +722,74 @@ export default function BookingsClient() {
                   </div>
                 </motion.div>
               ))}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="max-w-4xl w-full mx-auto mt-6 px-2">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
+                {/* Page Info */}
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  แสดง {startIndex + 1}-{Math.min(endIndex, totalItems)} จาก {totalItems} รายการ
+                </div>
+                
+                {/* Pagination Controls */}
+                <div className="flex items-center space-x-2">
+                  <motion.button
+                    whileHover={{ scale: currentPage > 1 ? 1.05 : 1 }}
+                    whileTap={{ scale: currentPage > 1 ? 0.95 : 1 }}
+                    onClick={goToPreviousPage}
+                    disabled={currentPage <= 1}
+                    className={`px-3 py-2 text-sm rounded-lg transition-all duration-200 flex items-center space-x-1 ${
+                      currentPage <= 1
+                        ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    <span>ก่อนหน้า</span>
+                  </motion.button>
+                  
+                  {/* Page Numbers */}
+                  <div className="flex items-center space-x-1">
+                    {getPageNumbers().map((page) => (
+                      <motion.button
+                        key={page}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => goToPage(page)}
+                        className={`px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
+                          currentPage === page
+                            ? 'bg-indigo-600 text-white shadow-md'
+                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        {page}
+                      </motion.button>
+                    ))}
+                  </div>
+                  
+                  <motion.button
+                    whileHover={{ scale: currentPage < totalPages ? 1.05 : 1 }}
+                    whileTap={{ scale: currentPage < totalPages ? 0.95 : 1 }}
+                    onClick={goToNextPage}
+                    disabled={currentPage >= totalPages}
+                    className={`px-3 py-2 text-sm rounded-lg transition-all duration-200 flex items-center space-x-1 ${
+                      currentPage >= totalPages
+                        ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <span>ถัดไป</span>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </motion.button>
+                </div>
+              </div>
             </div>
           )}
         </motion.div>
