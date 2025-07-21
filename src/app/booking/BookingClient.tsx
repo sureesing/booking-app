@@ -133,25 +133,42 @@ export default function BookingClient() {
     const symptoms = symptomCategory === 'อื่นๆ' ? customSymptoms : symptomCategory;
 
     try {
-      const scriptUrl = '/api/proxy';
-      const formData = new FormData();
-      formData.append('date', date);
-      formData.append('period', period);
-      formData.append('studentId', studentId);
-      formData.append('grade', grade);
-      formData.append('prefix', prefix);
-      formData.append('firstName', firstName);
-      formData.append('lastName', lastName);
-      formData.append('symptoms', symptoms);
-      formData.append('treatment', treatment);
-
+      let imageUrl = '';
       if (image) {
-        formData.append('image', image);
+        // Upload image to Cloudinary
+        const formData = new FormData();
+        formData.append('file', image);
+        formData.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!);
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`, {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+        if (data.secure_url) {
+          imageUrl = data.secure_url;
+        } else {
+          throw new Error('อัปโหลดรูปภาพไม่สำเร็จ');
+        }
       }
 
-      const response = await fetch(scriptUrl, {
+      // Prepare booking payload
+      const bookingPayload = {
+        date,
+        period,
+        studentId,
+        grade,
+        prefix,
+        firstName,
+        lastName,
+        symptoms,
+        treatment,
+        imageLink: imageUrl,
+      };
+
+      const response = await fetch('/api/proxy', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookingPayload),
       });
 
       if (!response.ok) {
@@ -159,9 +176,9 @@ export default function BookingClient() {
         throw new Error(`HTTP error! status: ${response.status}, details: ${errorText}`);
       }
 
-      const data = await response.json();
+      const result = await response.json();
 
-      if (data.success) {
+      if (result.success) {
         setDate('');
         setPeriod('');
         setStudentId('');
@@ -177,7 +194,7 @@ export default function BookingClient() {
         setHasSubmitted(false);
         router.push('/bookings');
       } else {
-        setError(data.message || 'ไม่สามารถบันทึกได้ กรุณาลองอีกครั้ง');
+        setError(result.message || 'ไม่สามารถบันทึกได้ กรุณาลองอีกครั้ง');
         setHasSubmitted(false);
       }
     } catch (err: unknown) {
