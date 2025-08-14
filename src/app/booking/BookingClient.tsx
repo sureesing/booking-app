@@ -306,10 +306,11 @@ export default function BookingClient() {
     'ลมพิษ/แก้แพ้', 'เป็นลม', 'ตา', 'ทำแผล', 'ปวดฟัน', 'ปวดประจำเดือน', 'อุบัติเหตุ', 'อื่นๆ'
   ];
 
-  // Generate grade options (1/1 to 6/12)
+  // Generate grade options (1/1 to 6/12, with 13 rooms for levels 1-3)
   const gradeOptions: string[] = [];
   for (let level = 1; level <= 6; level++) {
-    for (let room = 1; room <= 12; room++) {
+    const maxRooms = level <= 3 ? 13 : 12; // 13 rooms for ม.1-3, 12 rooms for ม.4-6
+    for (let room = 1; room <= maxRooms; room++) {
       gradeOptions.push(`${level}/${room}`);
     }
   }
